@@ -244,7 +244,7 @@ ultiCollection.commands.unshift(new Command(
                     .filter(({ timestamp }) => timestamp > currentTimestamp)
                     .reduce((acc, cur) => cur.timestamp > acc.timestamp ? acc : cur).game;
 
-                chat.sendMessage(`*[bot]* Our next game is at ${await nextGame.time()} against ${await nextGame.opponent()} at ${await nextGame.location()} (${await nextGame.day()}).`)
+                chat.sendMessage(`*[bot]* Our next game is at ${await nextGame.time()} against ${await nextGame.opponent()} at ${await nextGame.location()} (${await nextGame.day()}).`);
             }
 
             browser.close();

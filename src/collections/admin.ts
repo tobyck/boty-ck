@@ -40,7 +40,7 @@ adminCollection.commands.unshift(new Command(
 
 adminCollection.commands.unshift(new Command(
     "die", [],
-    "Kill the bot (only available to the bot's owner)",
+    "Kill the bot",
     async message => {
         if (message.fromMe) {
             const chat = await message.getChat();
@@ -48,7 +48,7 @@ adminCollection.commands.unshift(new Command(
             chat.sendMessage(`*[bot]* ${randomChoice(responses.death)}`);
             // wait a second before disconnecting because the promise
             // returned by chat.sendMessage seems to not work
-            setTimeout(client.destroy, 1000);
+            setTimeout(client.destroy.bind(client), 1000);
         }
     }
 ));
