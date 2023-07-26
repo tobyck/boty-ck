@@ -1,10 +1,3 @@
-/* 
- * Base collection (commands run with !<command>)
- *
- * !status - See what the bot is doing
- * !everyone - Mention everyone in the chat
- */
-
 import * as fs from "fs";
 
 import { Contact, GroupChat } from "whatsapp-web.js";
@@ -17,12 +10,12 @@ const responses = JSON.parse(fs.readFileSync("./responses.json", "utf8"));
 
 const baseCollection = new Collection(
     "base",
-    "All of my commands start with ! and can be seen below:"
+    "All of my commands start with ! and can be seen below:",
 );
 
 baseCollection.commands.unshift(new Command(
     "everyone", [],
-    "Mention everyone in the chat",
+    "Mentions everyone in the chat",
     async message => {
         // get the chat the message was sent in
         const chat = await message.getChat() as GroupChat;

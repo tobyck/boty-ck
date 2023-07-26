@@ -34,7 +34,13 @@ but there were a few things which went wrong while trying to set it up on an Ora
     ```bash
     yarn start & # Start job in background
     # To return to the shell, press Enter once the client is ready
-    jobs
-    disown -h jobID # Prevent SIGHUP
+    disown # Prevent SIGHUP
     # You can now close the session
+    ```
+
+- To kill the bot manually you need to find the process ID:
+
+    ```bash
+    ps aux | grep boty-ck.js
+    kill <PID>
     ```

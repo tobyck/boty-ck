@@ -1,10 +1,3 @@
-/* 
- * Ultimate Frisbee Collection (run with !ulti/<command>)
- *
- * !score - Get the score of the last game
- * !next - Get details about our next game
- */
-
 import type { GroupChat } from "whatsapp-web.js";
 
 import * as puppeteer from "puppeteer";
@@ -16,7 +9,8 @@ import { session } from "../bot";
 
 const ultiCollection = new Collection(
     "ulti",
-    "This collection contains commands for ultimate frisbee. All commands start with *!ulti/* and can be seen below:"
+    "This collection contains commands for ultimate frisbee. All commands start with *!ulti/* and can be seen below:",
+    true
 );
 
 ultiCollection.commands.unshift(new Command(
@@ -99,7 +93,7 @@ ultiCollection.commands.unshift(new Command(
 
 ultiCollection.commands.unshift(new Command(
     "who", [],
-    "Ask who's playing",
+    "Asks who's playing",
     async message => {
         const chat = await message.getChat();
 
@@ -212,7 +206,7 @@ const getGames = async (url: string): Promise<{
 
 ultiCollection.commands.unshift(new Command(
     "next", [],
-    "Get details about our next game",
+    "Gets details about our next game",
     async (message, _, collection) => {
         const chat = await message.getChat();
 
@@ -256,7 +250,7 @@ ultiCollection.commands.unshift(new Command(
 
 ultiCollection.commands.unshift(new Command(
     "score", [],
-    "Get the score of the last game",
+    "Gets the score of the last game",
     async (message, _, collection) => {
         const chat = await message.getChat();
 

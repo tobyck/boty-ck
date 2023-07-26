@@ -30,75 +30,73 @@ export class Collection {
     desc: string;
     commands: Command[] = [];
 
-    constructor(name: string, desc: string) {
+    constructor(name: string, desc: string, hasProps = false) {
         this.name = name;
         this.desc = desc;
 
-        // commands for setting and getting properties
+        // if the collection has properties, add the set, unset, and get commands
+        if (hasProps) {
+            this.commands.push(new Command(
+                "set", ["property", "value"],
+                "Set a property of this collection",
+                async (message, args) => {
+                    const [prop, value] = args!.split(/\s(.*)/s);
 
-        this.commands.push(new Command(
-            "set", ["property", "value"],
-            "Set a property of this collection",
-            async (message, args) => {
-                const [prop, value] = args!.split(/\s(.*)/s);
+                    const chat = await message.getChat();
 
-                const chat = await message.getChat();
+                    if (!prop) { // if no property is specified
+                        chat.sendMessage("*[bot]* Please specify a property to set.");
+                        return;
+                    } else if (!value) { // if no value is specified
+                        chat.sendMessage("*[bot]* Please specify a value to set the property to.");
+                        return;
+                    }
 
-                if (!prop) { // if no property is specified
-                    chat.sendMessage("*[bot]* Please specify a property to set.");
-                    return;
-                } else if (!value) { // if no value is specified
-                    chat.sendMessage("*[bot]* Please specify a value to set the property to.");
-                    return;
+                    // otherwise all args have been provided, so set the property
+                    this.props(session, chat).set(prop, value);
+
+                    // notify the user that the property has been set
+                    chat.sendMessage(`*[bot]* Property "${prop}" set to "${value}".`);
                 }
+            ));
 
-                // otherwise all args have been provided, so set the property
-                this.props(session, chat).set(prop, value);
-                session.save();
+            this.commands.push(new Command(
+                "unset", ["property"],
+                "Remove a property",
+                async (message, arg) => {
+                    const chat = await message.getChat();
 
-                // notify the user that the property has been set
-                chat.sendMessage(`*[bot]* Property "${prop}" set to "${value}".`);
-            }
-        ));
+                    if (arg) { // if a property is specified
+                        if (this.props(session, chat).has(arg)) { // if the property exists
+                            this.props(session, chat).delete(arg!); // delete it
+                            chat.sendMessage(`*[bot]* Property "${arg}" removed.`);
+                        } else {
+                            chat.sendMessage(`*[bot]* Property "${arg}" not found.`);
+                        }
+                    } else {
+                        chat.sendMessage("*[bot]* Please specify a property to remove.");
+                    }
+                }
+            ));
 
-        this.commands.push(new Command(
-            "unset", ["property"],
-            "Remove a property",
-            async (message, arg) => {
-                const chat = await message.getChat();
+            this.commands.push(new Command(
+                "get", ["property"],
+                "Get a property",
+                async (message, arg) => {
+                    const chat = await message.getChat();
 
-                if (arg) { // if a property is specified
-                    if (this.props(session, chat).has(arg)) { // if the property exists
-                        this.props(session, chat).delete(arg!); // delete it
-                        session.save(); // update session data file
-                        chat.sendMessage(`*[bot]* Property "${arg}" removed.`);
+                    if (!arg) {
+                        chat.sendMessage("*[bot]* Please specify a property to get.");
+                    } else if (this.props(session, chat).get(arg)) {
+                        chat.sendMessage(`*[bot]* ${this.props(session, chat).get(arg)}`);
                     } else {
                         chat.sendMessage(`*[bot]* Property "${arg}" not found.`);
                     }
-                } else {
-                    chat.sendMessage("*[bot]* Please specify a property to remove.");
                 }
-            }
-        ));
-
-        this.commands.push(new Command(
-            "get", ["property"],
-            "Get a property",
-            async (message, arg) => {
-                const chat = await message.getChat();
-
-                if (!arg) {
-                    chat.sendMessage("*[bot]* Please specify a property to get.");
-                } else if (this.props(session, chat).get(arg)) {
-                    chat.sendMessage(`*[bot]* ${this.props(session, chat).get(arg)}`);
-                } else {
-                    chat.sendMessage(`*[bot]* Property "${arg}" not found.`);
-                }
-            }
-        ));
+            ));
+        }
 
         // add a help command to every collection
-
         this.commands.push(new Command(
             "help", [],
             "Show this message",

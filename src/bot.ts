@@ -9,6 +9,7 @@ import baseCollection from "./collections/base";
 import ultiCollection from "./collections/ulti";
 import adminCollection from "./collections/admin";
 import { Session } from "./session";
+import { BotPermissions } from "./permissions";
 
 export const collections: Collection[] = [
     baseCollection,
@@ -17,10 +18,10 @@ export const collections: Collection[] = [
 ];
 
 export const session = new Session("session.json");
+export const permissions = new BotPermissions();
+export const client = new Client({});
 
 session.load();
-
-export const client = new Client({});
 
 let timeOfLastCommand = Date.now();
 const cooldown = 3000;
@@ -42,6 +43,9 @@ client.on("disconnected", () => {
 
 // every time a new message is created, it will be forwarded to this function
 client.on("message_create", async message => {
+    const sender = await message.getContact();
+    if (permissions.banned.has(sender.id.user)) return;
+
     const body = removeStyling(message.body);
 
     if (body.startsWith("!")) {
@@ -50,10 +54,10 @@ client.on("message_create", async message => {
         let args: string; // it's up to the command to parse this
 
         if (body.includes("/")) {
-            const split = body.split("/");
-            collectionName = split[0].slice(1);
-            commandName = split[1].split(" ")[0];
-            args = split[1].split(" ").slice(1).join(" ");
+            const command = body.split(" ")[0];
+            collectionName = command.split("/")[0].slice(1);
+            commandName = command.split("/").slice(1).join("/");
+            args = body.split(" ").slice(1).join(" ");
         } else {
             collectionName = "base";
             commandName = body.split(" ")[0].slice(1);
@@ -85,3 +89,9 @@ client.on("message_create", async message => {
 
 // bring Boty Copper-Kettle to life
 client.initialize();
+
+// save session data and permissions when the bot dies
+process.on("exit", () => {
+    session.save();
+    permissions.save();
+});

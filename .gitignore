@@ -1,3 +1,11 @@
+# dev stuff
 node_modules
 .parcel-cache
+
+# bot data
 session.json
+permissions.json
+
+# log files
+stdout.log
+stderr.log

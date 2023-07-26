@@ -1,10 +1,10 @@
 import * as fs from "fs";
-
-import { inspect } from "util";
+import { readFile } from "fs/promises";
+import { spawn } from "child_process";
 
 import { Collection, Command } from "../core";
-import { randomChoice } from "../helpers";
-import { client, session } from "../bot";
+import { fromAdmin, randomChoice } from "../helpers";
+import { client, permissions, session } from "../bot";
 import { Session } from "../session";
 
 const responses = JSON.parse(fs.readFileSync("./responses.json", "utf8"));
@@ -15,41 +15,174 @@ const adminCollection = new Collection(
 );
 
 adminCollection.commands.unshift(new Command(
-    "logsession", [],
-    "Logs the current session data to the console",
+    "new-session", [],
+    "Clears current session data",
     async message => {
-        if (message.fromMe) {
-            console.log(inspect(session.data, false, null, true));
-        }
+        if (!fromAdmin(message)) return;
+
+        session.data = Session.blankSession();
+
+        const chat = await message.getChat();
+        chat.sendMessage("*[bot]* Current session data has been cleared.");
     }
 ));
 
 adminCollection.commands.unshift(new Command(
-    "newsession", [],
-    "Clears current session data",
+    "force-save", [],
+    "Forces the bot to save session data and permissions",
     async message => {
-        if (message.fromMe) {
-            session.data = Session.blankSession();
-            session.save();
+        if (!fromAdmin(message)) return;
 
-            const chat = await message.getChat();
-            chat.sendMessage("*[bot]* Current session data has been cleared.");
-        }
+        session.save();
+        permissions.save();
+    }
+));
+
+adminCollection.commands.unshift(new Command(
+    "update", [],
+    "Pulls the latest changes from GitHub",
+    async message => {
+        if (!fromAdmin(message)) return;
+
+        const childProc = spawn("git", "pull origin master".split(" "), { detached: true });
+
+        // when childProc ends
+        childProc.stdout
+    }
+));
+
+adminCollection.commands.unshift(new Command(
+    "restart", [],
+    "Restarts the bot",
+    async message => {
+        // only allow the owner to restart the bot
+        if (!message.fromMe) return;
+
+        const chat = await message.getChat();
+
+        const stdout = fs.openSync("./stdout.log", "a");
+        const stderr = fs.openSync("./stderr.log", "a");
+
+        fs.writeFileSync("./stdout.log", "");
+        fs.writeFileSync("./stderr.log", "");
+
+        const childProc = spawn("nohup", ["yarn", "start"], {
+            detached: true,
+            stdio: [null, stdout, stderr] // null for stdin as we don't need it
+        });
+
+        let gotQrCode = false;
+
+        const QR_CODE_HEIGHT = 29;
+
+        const interval = setInterval(() => {
+            readFile("./stdout.log", "utf8").then(data => {
+                const stdoutLines = data.split("\n");
+
+                if (stdoutLines.length >= QR_CODE_HEIGHT && !gotQrCode) {
+                    chat.sendMessage("*[bot]* I'm currently being restarted. My owner has been sent a QR code to bring me back online and has 1 minute to scan it on web.whatsapp.com.");
+
+                    // send the qr code to the bot's owner
+                    client.sendMessage(message.from, `*[bot]* Scan this to restart the bot:\n\`\`\`${stdoutLines.slice(-QR_CODE_HEIGHT - 1, -1).join("\n")}\`\`\``)
+
+                    gotQrCode = true;
+                }
+
+                // if a second qr code is found, timeout
+                if (stdoutLines.length >= QR_CODE_HEIGHT * 2) {
+                    chat.sendMessage("*[bot]* QR code has expired. Please try again.")
+                    childProc.kill();
+                    clearInterval(interval);
+                }
+
+                // once the new bot is ready we can kill the old one
+                if (stdoutLines.includes("Client is ready")) {
+                    client.destroy();
+                    clearInterval(interval);
+                    process.exit(0);
+                }
+            });
+        }, 4000);
+
+        childProc.on("error", err => {
+            chat.sendMessage("*[bot]* Something went wrong while trying to restart. The owner can check the server for more details.");
+            throw err;
+        });
     }
 ));
 
 adminCollection.commands.unshift(new Command(
     "die", [],
-    "Kill the bot",
+    "Kills the bot",
     async message => {
-        if (message.fromMe) {
-            const chat = await message.getChat();
+        if (!fromAdmin(message)) return;
 
-            chat.sendMessage(`*[bot]* ${randomChoice(responses.death)}`);
-            // wait a second before disconnecting because the promise
-            // returned by chat.sendMessage seems to not work
-            setTimeout(client.destroy.bind(client), 1000);
-        }
+        const chat = await message.getChat();
+
+        chat.sendMessage(`*[bot]* ${randomChoice(responses.death)}`);
+        // wait a second before disconnecting because the promise
+        // returned by chat.sendMessage seems to not work
+        setTimeout(client.destroy.bind(client), 1000);
+    }
+));
+
+adminCollection.commands.unshift(new Command(
+    "disallow/admin", ["phone number"],
+    "Removes a user's admin privileges",
+    async (message, phoneNumber) => {
+        if (!fromAdmin(message)) return;
+        phoneNumber = phoneNumber.replace(/\s/g, "");
+
+        permissions.otherAdmins.delete(phoneNumber);
+
+        const chat = await message.getChat();
+        chat.sendMessage(`*[bot]* ${phoneNumber} has had their admin privileges revoked.`);
+    }
+));
+
+adminCollection.commands.unshift(new Command(
+    "allow/admin", ["phone number"],
+    "Gives a user admin privileges",
+    async (message, phoneNumber) => {
+        if (!fromAdmin(message)) return;
+        phoneNumber = phoneNumber.replace(/\s/g, "");
+
+        permissions.otherAdmins.add(phoneNumber);
+
+        const chat = await message.getChat();
+        chat.sendMessage(`*[bot]* ${phoneNumber} has been given admin privileges.`);
+    }
+));
+
+adminCollection.commands.unshift(new Command(
+    "disallow/user", ["phone number"],
+    "Bans a user from using the bot",
+    async (message, phoneNumber) => {
+        if (!fromAdmin(message)) return;
+        phoneNumber = phoneNumber.replace(/\s/g, "");
+
+        // ignore if trying to ban the owner
+        const ownerPhoneNumber = await client.info.wid.user;
+        if (ownerPhoneNumber === phoneNumber) return;
+
+        permissions.banned.add(phoneNumber);
+
+        const chat = await message.getChat();
+        chat.sendMessage(`*[bot]* ${phoneNumber} has been banned.`)
+    }
+));
+
+adminCollection.commands.unshift(new Command(
+    "allow/user", ["phone number"],
+    "Removes a user's ban from using the bot",
+    async (message, phoneNumber) => {
+        if (!fromAdmin(message)) return;
+
+        phoneNumber = phoneNumber.replace(/\s/g, "");
+        permissions.banned.delete(phoneNumber);
+
+        const chat = await message.getChat();
+        chat.sendMessage(`*[bot]* ${phoneNumber} has been unbanned.`);
     }
 ));
 

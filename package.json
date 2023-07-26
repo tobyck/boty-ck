@@ -5,7 +5,7 @@
   "author": "Toby Connor-Kebbell",
   "license": "MIT",
   "source": "src/bot.ts",
-  "main": "dist/bot.js",
+  "main": "dist/boty-ck.js",
   "targets": {
     "main": {
       "sourceMap": false,
@@ -15,7 +15,7 @@
   "scripts": {
     "build": "parcel build",
     "watch": "parcel watch --no-cache",
-    "start": "node dist/bot.js",
+    "start": "node dist/boty-ck.js",
     "clean": "rm -rf dist",
     "check": "tsc --noEmit",
     "lint": "eslint \"src/**/*.ts\" --fix"
