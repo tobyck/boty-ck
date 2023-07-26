@@ -406,10 +406,17 @@ $3055ea6de07cbf1b$var$adminCollection.commands.unshift(new (0, $2407f3867a98a921
 $3055ea6de07cbf1b$var$adminCollection.commands.unshift(new (0, $2407f3867a98a921$export$cc7e12c76513e857)("update", [], "Pulls the latest changes from GitHub", async (message)=>{
     if (!(0, $9f891ff97f3b7cc5$export$5d5140bde1887739)(message)) return;
     const childProc = (0, $3SLR2$child_process.spawn)("git", "pull origin master".split(" "), {
-        detached: true
+        detached: true,
+        stdio: [
+            null,
+            "ignore",
+            $3SLR2$fs.openSync("./stderr.log", "a")
+        ]
     });
-    // when childProc ends
-    childProc.stdout;
+    childProc.on("exit", (exitCode)=>{
+        if (exitCode === 0) message.reply("*[bot]* Latest changes have been pulled from GitHub and merged successfully.");
+        else message.reply("*[bot]* Something went wrong while trying to update. My owner can check the server for more details.");
+    });
 }));
 $3055ea6de07cbf1b$var$adminCollection.commands.unshift(new (0, $2407f3867a98a921$export$cc7e12c76513e857)("restart", [], "Restarts the bot", async (message)=>{
     // only allow the owner to restart the bot
@@ -456,7 +463,7 @@ $3055ea6de07cbf1b$var$adminCollection.commands.unshift(new (0, $2407f3867a98a921
         });
     }, 4000);
     childProc.on("error", (err)=>{
-        chat.sendMessage("*[bot]* Something went wrong while trying to restart. The owner can check the server for more details.");
+        chat.sendMessage("*[bot]* Something went wrong while trying to restart. My owner can check the server for more details.");
         throw err;
     });
 }));

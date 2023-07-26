@@ -44,10 +44,18 @@ adminCollection.commands.unshift(new Command(
     async message => {
         if (!fromAdmin(message)) return;
 
-        const childProc = spawn("git", "pull origin master".split(" "), { detached: true });
+        const childProc = spawn("git", "pull origin master".split(" "), {
+            detached: true,
+            stdio: [null, "ignore", fs.openSync("./stderr.log", "a")]
+        });
 
-        // when childProc ends
-        childProc.stdout
+        childProc.on("exit", exitCode => {
+            if (exitCode === 0) {
+                message.reply("*[bot]* Latest changes have been pulled from GitHub and merged successfully.");
+            } else {
+                message.reply("*[bot]* Something went wrong while trying to update. My owner can check the server for more details.")
+            }
+        })
     }
 ));
 
@@ -105,7 +113,7 @@ adminCollection.commands.unshift(new Command(
         }, 4000);
 
         childProc.on("error", err => {
-            chat.sendMessage("*[bot]* Something went wrong while trying to restart. The owner can check the server for more details.");
+            chat.sendMessage("*[bot]* Something went wrong while trying to restart. My owner can check the server for more details.");
             throw err;
         });
     }

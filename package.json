@@ -18,7 +18,8 @@
     "start": "node dist/boty-ck.js",
     "clean": "rm -rf dist",
     "check": "tsc --noEmit",
-    "lint": "eslint \"src/**/*.ts\" --fix"
+    "lint": "eslint \"src/**/*.ts\" --fix",
+    "kill": "kill $(ps aux | grep boty-ck.js | grep -v grep | egrep -o '\\d+' | head -1)"
   },
   "dependencies": {
     "puppeteer": "^20.4.0",
