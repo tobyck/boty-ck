@@ -1,5 +1,5 @@
 import type { Chat, Message } from "whatsapp-web.js";
-import { writeFileSync, readFileSync, existsSync } from "fs";
+import { readFileSync } from "fs";
 
 export const randomChoice = (arr: any[]) => {
     return arr[Math.floor(Math.random() * arr.length)];
@@ -28,4 +28,4 @@ export const fromAdmin = async (message: Message): Promise<boolean> => {
     const permissions = JSON.parse(readFileSync("permissions.json", "utf8"));
     const sender = await message.getContact();
     return message.fromMe || permissions.otherAdmins.includes(sender.id.user);
-}
+};

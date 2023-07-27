@@ -1,4 +1,4 @@
-import * as fs from "fs";
+import fs from "fs";
 import { readFile } from "fs/promises";
 import { spawn } from "child_process";
 
@@ -51,11 +51,11 @@ adminCollection.commands.unshift(new Command(
 
         childProc.on("exit", exitCode => {
             if (exitCode === 0) {
-                message.reply("*[bot]* Latest changes have been pulled from GitHub and merged successfully.");
+                message.reply("*[bot]* Latest changes have been pulled from GitHub and merged successfully. Use *!admin/restart* to put these changes into effect.");
             } else {
-                message.reply("*[bot]* Something went wrong while trying to update. My owner can check the server for more details.")
+                message.reply("*[bot]* Something went wrong while trying to update. My owner can check the server for more details.");
             }
-        })
+        });
     }
 ));
 
@@ -68,13 +68,15 @@ adminCollection.commands.unshift(new Command(
 
         const chat = await message.getChat();
 
+        chat.sendMessage("*[bot]* I'm currently being restarted. My owner will be sent a QR code to bring me back online and will have 1 minute to scan it on web.whatsapp.com.");
+
         const stdout = fs.openSync("./stdout.log", "a");
         const stderr = fs.openSync("./stderr.log", "a");
 
         fs.writeFileSync("./stdout.log", "");
         fs.writeFileSync("./stderr.log", "");
 
-        const childProc = spawn("nohup", ["yarn", "start"], {
+        const childProc = spawn("nohup", ["yarn", "start", randomChoice(responses.return)], {
             detached: true,
             stdio: [null, stdout, stderr] // null for stdin as we don't need it
         });
@@ -88,17 +90,15 @@ adminCollection.commands.unshift(new Command(
                 const stdoutLines = data.split("\n");
 
                 if (stdoutLines.length >= QR_CODE_HEIGHT && !gotQrCode) {
-                    chat.sendMessage("*[bot]* I'm currently being restarted. My owner has been sent a QR code to bring me back online and has 1 minute to scan it on web.whatsapp.com.");
-
                     // send the qr code to the bot's owner
-                    client.sendMessage(message.from, `*[bot]* Scan this to restart the bot:\n\`\`\`${stdoutLines.slice(-QR_CODE_HEIGHT - 1, -1).join("\n")}\`\`\``)
+                    client.sendMessage(message.from, `*[bot]* Scan this to restart the bot:\n\`\`\`${stdoutLines.slice(-QR_CODE_HEIGHT - 1, -1).join("\n")}\`\`\``);
 
                     gotQrCode = true;
                 }
 
                 // if a second qr code is found, timeout
                 if (stdoutLines.length >= QR_CODE_HEIGHT * 2) {
-                    chat.sendMessage("*[bot]* QR code has expired. Please try again.")
+                    chat.sendMessage("*[bot]* QR code has expired. Please try again.");
                     childProc.kill();
                     clearInterval(interval);
                 }
@@ -139,7 +139,12 @@ adminCollection.commands.unshift(new Command(
     "Removes a user's admin privileges",
     async (message, phoneNumber) => {
         if (!fromAdmin(message)) return;
-        phoneNumber = phoneNumber.replace(/\s/g, "");
+        phoneNumber = phoneNumber.replace(/\s\+/g, "");
+
+        if (phoneNumber.match(/[^\d]/)) {
+            message.reply("*[bot]* Please enter a valid phone number.");
+            return;
+        }
 
         permissions.otherAdmins.delete(phoneNumber);
 
@@ -153,7 +158,12 @@ adminCollection.commands.unshift(new Command(
     "Gives a user admin privileges",
     async (message, phoneNumber) => {
         if (!fromAdmin(message)) return;
-        phoneNumber = phoneNumber.replace(/\s/g, "");
+        phoneNumber = phoneNumber.replace(/\s\+/g, "");
+
+        if (phoneNumber.match(/[^\d]/)) {
+            message.reply("*[bot]* Please enter a valid phone number.");
+            return;
+        }
 
         permissions.otherAdmins.add(phoneNumber);
 
@@ -167,7 +177,12 @@ adminCollection.commands.unshift(new Command(
     "Bans a user from using the bot",
     async (message, phoneNumber) => {
         if (!fromAdmin(message)) return;
-        phoneNumber = phoneNumber.replace(/\s/g, "");
+        phoneNumber = phoneNumber.replace(/\s\+/g, "");
+
+        if (phoneNumber.match(/[^\d]/)) {
+            message.reply("*[bot]* Please enter a valid phone number.");
+            return;
+        }
 
         // ignore if trying to ban the owner
         const ownerPhoneNumber = await client.info.wid.user;
@@ -176,7 +191,7 @@ adminCollection.commands.unshift(new Command(
         permissions.banned.add(phoneNumber);
 
         const chat = await message.getChat();
-        chat.sendMessage(`*[bot]* ${phoneNumber} has been banned.`)
+        chat.sendMessage(`*[bot]* ${phoneNumber} has been banned.`);
     }
 ));
 
@@ -185,8 +200,13 @@ adminCollection.commands.unshift(new Command(
     "Removes a user's ban from using the bot",
     async (message, phoneNumber) => {
         if (!fromAdmin(message)) return;
+        phoneNumber = phoneNumber.replace(/\s\+/g, "");
 
-        phoneNumber = phoneNumber.replace(/\s/g, "");
+        if (phoneNumber.match(/[^\d]/)) {
+            message.reply("*[bot]* Please enter a valid phone number.");
+            return;
+        }
+
         permissions.banned.delete(phoneNumber);
 
         const chat = await message.getChat();

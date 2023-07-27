@@ -1,4 +1,4 @@
-import * as fs from "fs";
+import fs from "fs";
 
 import { Contact, GroupChat } from "whatsapp-web.js";
 
@@ -44,11 +44,14 @@ baseCollection.commands.unshift(new Command(
     "status", [],
     "See what the bot is doing",
     async message => {
-        const prefixes = Object.keys(responses.statuses); // everything a status can start with
-        const prefix = randomChoice(prefixes); // choose one at random
-        const status = randomChoice(responses.statuses[prefix]); // choose a status that starts with that prefix
+        const statuses: string[] = [];
 
-        message.reply(`*[bot]* ${prefix} ${status}${prefix === "Help," ? "!" : "."}`);
+        for (const prefix in responses.statuses) {
+            statuses.push(...responses.statuses[prefix]
+                .map((status: string) => `${prefix}${prefix ? " " : ""}${status}`));
+        }
+
+        message.reply(`*[bot]* ${randomChoice(statuses)}.`);
     }
 ));
 

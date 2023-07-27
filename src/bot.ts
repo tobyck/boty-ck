@@ -1,11 +1,12 @@
 import { Client } from "whatsapp-web.js";
-
 import qrcode from "qrcode-terminal";
+import process from "process";
 
 import type { Collection } from "./core";
 import { removeStyling } from "./helpers";
 
 import baseCollection from "./collections/base";
+
 import ultiCollection from "./collections/ulti";
 import adminCollection from "./collections/admin";
 import { Session } from "./session";
@@ -18,7 +19,7 @@ export const collections: Collection[] = [
 ];
 
 export const session = new Session("session.json");
-export const permissions = new BotPermissions();
+export const permissions = new BotPermissions("permissions.json");
 export const client = new Client({});
 
 session.load();
@@ -34,6 +35,12 @@ client.on("qr", qr => {
 // notify when client is ready
 client.on("ready", () => {
     console.log("Client is ready");
+
+    // send the owner a message if they specified one
+    const returnMessage = process.argv[2];
+    console.log(returnMessage, client.info);
+
+    if (returnMessage) client.sendMessage(client.info.wid._serialized, `*[bot]* ${returnMessage}`);
 });
 
 // notify when client has disconnected
@@ -64,6 +71,9 @@ client.on("message_create", async message => {
             args = body.split(" ").slice(1).join(" ");
         }
 
+        console.log(collectionName, commandName, args);
+
+
         for (const collection of collections) {
             if (collection.name === collectionName) {
                 for (const command of collection.commands) {
@@ -71,6 +81,8 @@ client.on("message_create", async message => {
                         command.name === commandName &&
                         Date.now() - timeOfLastCommand > cooldown
                     ) {
+                        console.log("running command");
+
                         const chat = await message.getChat();
 
                         await chat.sendStateTyping();
@@ -84,6 +96,8 @@ client.on("message_create", async message => {
                 }
             }
         }
+
+        timeOfLastCommand = Date.now();
     }
 });
 

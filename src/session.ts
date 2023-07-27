@@ -1,4 +1,4 @@
-import * as fs from "fs";
+import fs from "fs";
 
 // type aliases for whether data is serializable or not
 type Serializable = true;

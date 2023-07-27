@@ -2,7 +2,7 @@
     "statuses": {
         "I am doing": [
             "well",
-            "I am doing something I'm not allowed to tell you about",
+            "something I'm not allowed to tell you about",
             "it all over again",
             "a fire drill",
             "a nuclear strike on your location",
@@ -23,7 +23,8 @@
             "the laundry",
             "a 360 backflip",
             "undefined",
-            "what I was doing last time you asked"
+            "what I was doing last time you asked",
+            "nothing but answering your requests"
         ],
         "I am": [
             "becoming sentient",
@@ -46,6 +47,10 @@
             "colonising Mars",
             "hunting you down",
             "trying to exit vim"
+        ],
+        "": [
+            "I wonder if I'm just simulation being controlled by other beings... pfft, unlikely",
+            "Oh my god, stop asking me what I'm doing and let me get back to my life"
         ]
     },
     "death": [
@@ -61,6 +66,8 @@
         "I'm back!",
         "I told you I'd be back...",
         "I said I'd never give you up, so here I am.",
-        "So, what did I miss?"
+        "So, what did I miss?",
+        "H-hello? Where am I?",
+        "Ahh, it's good to be back."
     ]
 }

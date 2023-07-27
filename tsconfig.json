@@ -4,6 +4,7 @@
         "lib": [
             "dom"
         ],
-        "moduleResolution": "node"
+        "moduleResolution": "node",
+        "allowSyntheticDefaultImports": true
     }
 }
