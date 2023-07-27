@@ -14,6 +14,18 @@ const baseCollection = new Collection(
 );
 
 baseCollection.commands.unshift(new Command(
+    "cookie", [],
+    "Gives you a cookie",
+    async message => {
+        if (Math.random() < .1) {
+            message.reply("*[bot]* No.");
+        } else {
+            message.reply("*[bot]* Here you go: 🍪");
+        }
+    }
+));
+
+baseCollection.commands.unshift(new Command(
     "everyone", [],
     "Mentions everyone in the chat",
     async message => {

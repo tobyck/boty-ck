@@ -96,8 +96,6 @@ export class Collection {
             ));
         }
 
-        console.log("adding help command");
-
         // add a help command to every collection
         this.commands.push(new Command(
             "help", [],

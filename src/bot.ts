@@ -34,12 +34,10 @@ client.on("qr", qr => {
 
 // notify when client is ready
 client.on("ready", () => {
-    console.log("Client is ready");
+    console.log(`Client is ready (${client.info.pushname}, ${client.info.wid.user})`);
 
     // send the owner a message if they specified one
     const returnMessage = process.argv[2];
-    console.log(returnMessage, client.info);
-
     if (returnMessage) client.sendMessage(client.info.wid._serialized, `*[bot]* ${returnMessage}`);
 });
 
@@ -71,9 +69,6 @@ client.on("message_create", async message => {
             args = body.split(" ").slice(1).join(" ");
         }
 
-        console.log(collectionName, commandName, args);
-
-
         for (const collection of collections) {
             if (collection.name === collectionName) {
                 for (const command of collection.commands) {
@@ -81,8 +76,6 @@ client.on("message_create", async message => {
                         command.name === commandName &&
                         Date.now() - timeOfLastCommand > cooldown
                     ) {
-                        console.log("running command");
-
                         const chat = await message.getChat();
 
                         await chat.sendStateTyping();
