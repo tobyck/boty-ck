@@ -104,7 +104,7 @@ adminCollection.commands.unshift(new Command(
                 }
 
                 // once the new bot is ready we can kill the old one
-                if (stdoutLines.includes("Client is ready")) {
+                if (stdoutLines.some(line => line.includes("Client is ready"))) {
                     client.destroy();
                     clearInterval(interval);
                     process.exit(0);

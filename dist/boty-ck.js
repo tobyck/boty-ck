@@ -452,7 +452,7 @@ $3055ea6de07cbf1b$var$adminCollection.commands.unshift(new (0, $2407f3867a98a921
                 clearInterval(interval);
             }
             // once the new bot is ready we can kill the old one
-            if (stdoutLines.includes("Client is ready")) {
+            if (stdoutLines.some((line)=>line.includes("Client is ready"))) {
                 (0, $22fd70b2233cc903$export$388e0302ca0d9a41).destroy();
                 clearInterval(interval);
                 $3SLR2$process.exit(0);
