@@ -152,9 +152,14 @@ class Game {
     }
 
     // get a single number representing the time of the game
-    // for example, 7:30pm on 4/06/2023 would be 202306041930
+    // for example, 7:30pm on 4/6/2023 would be 202306041930
     async timestamp(): Promise<number> {
-        let str = (await this.day()).split(" ")[1].split("/").reverse().join("");
+        let str = (await this.day()).split(" ")[1]
+            .split("/")
+            .map(Number)
+            .map(padTwo0s)
+            .reverse()
+            .join("");
 
         const time = await this.time();
 
@@ -165,7 +170,7 @@ class Game {
         }
 
         // add hour and minutes to the string
-        str += hour.toString().padStart(2, "0") + time.split(":")[1].split(" ")[0];
+        str += padTwo0s(hour) + time.split(":")[1].split(" ")[0];
 
         return parseInt(str);
     }

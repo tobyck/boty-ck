@@ -22,6 +22,8 @@ export const session = new Session("session.json");
 export const permissions = new BotPermissions("permissions.json");
 export const client = new Client({});
 
+globalThis.awake = true;
+
 session.load();
 
 let timeOfLastCommand = Date.now();
@@ -68,6 +70,8 @@ client.on("message_create", async message => {
             commandName = body.split(" ")[0].slice(1);
             args = body.split(" ").slice(1).join(" ");
         }
+
+        if (!globalThis.awake && !(collectionName === "admin" && commandName === "wake")) return;
 
         for (const collection of collections) {
             if (collection.name === collectionName) {

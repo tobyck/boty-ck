@@ -62,12 +62,26 @@
         "So long and thanks for all the fish.",
         "💀"
     ],
-    "return": [
+    "restart": [
         "I'm back!",
         "I told you I'd be back...",
         "I said I'd never give you up, so here I am.",
         "So, what did I miss?",
         "H-hello? Where am I?",
         "Ahh, it's good to be back."
+    ],
+    "sleep": [
+        "Goodnight",
+        "😴",
+        "Goodnight, wake me up if you need anything",
+        "See ya",
+        "See you in the morning"
+    ],
+    "awake": [
+        "How long was I asleep? 🥱",
+        "Hello again",
+        "So, what did I miss?",
+        "Good morning! Wait, is it the morning? I don't know...",
+        "So, what did I miss?"
     ]
 }

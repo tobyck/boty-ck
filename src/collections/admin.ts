@@ -76,7 +76,7 @@ adminCollection.commands.unshift(new Command(
         fs.writeFileSync("./stdout.log", "");
         fs.writeFileSync("./stderr.log", "");
 
-        const childProc = spawn("nohup", ["yarn", "start", randomChoice(responses.return)], {
+        const childProc = spawn("nohup", ["yarn", "start", randomChoice(responses.restart)], {
             detached: true,
             stdio: [null, stdout, stderr] // null for stdin as we don't need it
         });
@@ -116,6 +116,32 @@ adminCollection.commands.unshift(new Command(
             chat.sendMessage("*[bot]* Something went wrong while trying to restart. My owner can check the server for more details.");
             throw err;
         });
+    }
+));
+
+adminCollection.commands.unshift(new Command(
+    "wake", [],
+    "Awakes the bot",
+    async message => {
+        if (!fromAdmin(message)) return;
+
+        const chat = await message.getChat();
+        await chat.sendMessage(`*[bot]* ${randomChoice(responses.awake)}`);
+
+        globalThis.awake = true;
+    }
+));
+
+adminCollection.commands.unshift(new Command(
+    "sleep", [],
+    "Puts the bot to sleep",
+    async message => {
+        if (!fromAdmin(message)) return;
+
+        const chat = await message.getChat();
+        await chat.sendMessage(`*[bot]* ${randomChoice(responses.sleep)}`);
+
+        globalThis.awake = false;
     }
 ));
 
