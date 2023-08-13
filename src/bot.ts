@@ -36,6 +36,7 @@ client.on("qr", qr => {
 
 // notify when client is ready
 client.on("ready", () => {
+    // eslint-disable-next-line
     console.log(`Client is ready (${client.info.pushname}, ${client.info.wid.user})`);
 
     // send the owner a message if they specified one
@@ -45,6 +46,7 @@ client.on("ready", () => {
 
 // notify when client has disconnected
 client.on("disconnected", () => {
+    // eslint-disable-next-line
     console.log("Client has disconnected");
 });
 
@@ -58,7 +60,6 @@ client.on("message_create", async message => {
     if (body.startsWith("!")) {
         let collectionName: string;
         let commandName: string;
-        let args: string; // it's up to the command to parse this
 
         if (body.includes("/")) {
             const command = body.split(" ")[0];
@@ -69,9 +70,8 @@ client.on("message_create", async message => {
             commandName = body.split(" ")[0].slice(1);
         }
 
-        console.log(message.body, body.split(" "), body.split(" ").slice(1));
-
-        args = body.split(" ").slice(1).join(" ");
+        // it's up to the command how to parse this
+        const args = body.split(" ").slice(1).join(" ");
 
         if (!globalThis.awake && !(collectionName === "admin" && commandName === "wake")) return;
 

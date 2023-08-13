@@ -41,8 +41,6 @@ export class Collection {
                 "set", ["property", "value"],
                 "Set a property of this collection",
                 async (message, args) => {
-                    console.log(JSON.stringify(args))
-                    console.log(parseArgs(args!))
                     const [prop, value] = parseArgs(args!);
 
                     const chat = await message.getChat();

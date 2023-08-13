@@ -28,13 +28,13 @@ export const parseArgs = (str: string): string[] => {
 
     const args: string[] = [];
     let state: "string" | "other" | null = null;
-    let startedWith: "'" | '"'; // what the string started with
+    let startedWith: "'" | "\""; // what the string started with
 
     for (const char of str) {
         if (state === null && char !== " ") {
-            if (`'"`.includes(char)) {
+            if ("'\"".includes(char)) {
                 args.push("");
-                startedWith = char as "'" | '"';
+                startedWith = char as "'" | "\"";
                 state = "string";
             } else {
                 args.push(char);
@@ -43,7 +43,7 @@ export const parseArgs = (str: string): string[] => {
         } else if (state === "string") {
             if (char === startedWith) {
                 if (last(last(args)) !== "\\" || last(args).slice(-2) === "\\\\") {
-                    state = null
+                    state = null;
                     startedWith = null;
                 }
             }
@@ -55,7 +55,7 @@ export const parseArgs = (str: string): string[] => {
     }
 
     return args;
-}
+};
 
 export const pleaseSetTeam = (chat: Chat) => chat.sendMessage(
     "*[bot]* Please specify a team using *!ulti/set team <your team name>*. Note: if you still don't see what you expect, there may be multiple teams with your name. If this is case, find your team on ultimate.org.nz and set your team using what appears in the URL (you should see something like ultimate.org.nz/t/epic-team-name-3)."

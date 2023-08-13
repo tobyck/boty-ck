@@ -195,7 +195,7 @@ const getGames = async (url: string, chat: Chat): Promise<{
     try {
         await page.goto(url);
     } catch (_) {
-        chat.sendMessage(`*[bot]* Sorry, I couldn't find any games on ${url}`)
+        chat.sendMessage(`*[bot]* Sorry, I couldn't find any games on ${url}`);
     }
 
     // set screen size to 1080p
@@ -234,7 +234,7 @@ ultiCollection.commands.unshift(new Command(
                 return;
             }
 
-            if (!team) message.reply("*[bot]* Please specify a team using *!ulti/set team <team name>*")
+            if (!team) message.reply("*[bot]* Please specify a team using *!ulti/set team <team name>*");
             if (!event) message.reply("*[bot]* Please specify an event using *!ulti/set event <event name>* (just copy/paste from the website).");
 
             return;
@@ -246,7 +246,7 @@ ultiCollection.commands.unshift(new Command(
 
         await page.setDefaultTimeout(15_000);
 
-        const url = `https://wellington.ultimate.org.nz/e/${hyphenateForURL(event)}/standings`
+        const url = `https://wellington.ultimate.org.nz/e/${hyphenateForURL(event)}/standings`;
 
         await page.goto(url);
 
@@ -261,10 +261,8 @@ ultiCollection.commands.unshift(new Command(
                 name: node.querySelector(".plain-link").innerHTML,
                 rank: null,
                 pointDiff: node.querySelectorAll(".span4")[4].innerHTML
-            }))
+            }));
         })).map((team, index) => (team.rank = index + 1, team));
-
-        console.log(teams)
 
         let rankingMessage = `*[bot]* Here are the standings for ${event} (there are ${teams.length} in total):\n\n\`\`\``;
 
@@ -304,7 +302,7 @@ ultiCollection.commands.unshift(new Command(
             if (team.name.length > maxNameLength) name = name.slice(0, -1) + "…";
 
             rankingMessage += `${team.rank.toString().padStart(maxRankLength)} | ${name}  ${team.pointDiff.padEnd(maxPointDiffLength)}\n`;
-        }
+        };
 
         // if the top team isn't in nearbyTeams
         if (nearbyTeams[0].rank !== 1) {
@@ -427,8 +425,10 @@ ultiCollection.commands.unshift(new Command(
                     }
                 } else {
                     // if we got down here something went very wrong
+                    /* eslint-disable */
                     console.log("ourScore:", ourScore);
                     console.log("theirScore:", theirScore);
+                    /* eslint-enable */
                 }
             } else {
                 chat.sendMessage(`*[bot]* Sorry, I couldn't find any games on ${url}.`);
