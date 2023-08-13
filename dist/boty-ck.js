@@ -9,6 +9,14 @@ var $3SLR2$child_process = require("child_process");
 function $parcel$interopDefault(a) {
   return a && a.__esModule ? a.default : a;
 }
+function $parcel$export(e, n, v, s) {
+  Object.defineProperty(e, n, {get: v, set: s, enumerable: true, configurable: true});
+}
+
+$parcel$export(module.exports, "collections", () => $22fd70b2233cc903$export$167de583c0ce0e55);
+$parcel$export(module.exports, "session", () => $22fd70b2233cc903$export$55427e926be628d4);
+$parcel$export(module.exports, "permissions", () => $22fd70b2233cc903$export$430c45605c9594b5);
+$parcel$export(module.exports, "client", () => $22fd70b2233cc903$export$388e0302ca0d9a41);
 
 
 
@@ -18,15 +26,43 @@ const $9f891ff97f3b7cc5$export$94951fac5549ef77 = (arr)=>{
 };
 const $9f891ff97f3b7cc5$export$a1cfd4c88b9f5722 = (str)=>str.toLowerCase().replace(/ /g, "-").replace(/\.'/g, "");
 const $9f891ff97f3b7cc5$export$f6bbf75dd8f30813 = (str)=>str.replace(/\*([^ ]+)\*/g, "$1").replace(/_([^ ]+)_/g, "$1").replace(/~([^ ]+)~/g, "$1").replace(/```([^ ]+)```/g, "$1");
-const $9f891ff97f3b7cc5$export$b8771e16af18bdbe = (arr, n)=>arr[arr.length - n];
+const $9f891ff97f3b7cc5$export$4c7897fafd92b108 = (iterable)=>iterable[iterable.length - 1];
 const $9f891ff97f3b7cc5$export$df5bae67edfdd4c3 = (n)=>n === 1 ? "" : "s";
 const $9f891ff97f3b7cc5$export$5d04600fe9c47a27 = (num)=>num.toString().padStart(2, "0");
+const $9f891ff97f3b7cc5$export$7300a92932ee17a3 = (str)=>{
+    // this is can probably be done with a regex but too bad
+    const args = [];
+    let state = null;
+    let startedWith; // what the string started with
+    for (const char of str){
+        if (state === null && char !== " ") {
+            if (`'"`.includes(char)) {
+                args.push("");
+                startedWith = char;
+                state = "string";
+            } else {
+                args.push(char);
+                state = "other";
+            }
+        } else if (state === "string") {
+            if (char === startedWith) {
+                if ($9f891ff97f3b7cc5$export$4c7897fafd92b108($9f891ff97f3b7cc5$export$4c7897fafd92b108(args)) !== "\\" || $9f891ff97f3b7cc5$export$4c7897fafd92b108(args).slice(-2) === "\\\\") {
+                    state = null;
+                    startedWith = null;
+                }
+            } else args[args.length - 1] += char;
+        } else if (char === " ") state = null;
+        else args[args.length - 1] += char;
+    }
+    return args;
+};
 const $9f891ff97f3b7cc5$export$ec14613d64f35cd0 = (chat)=>chat.sendMessage("*[bot]* Please specify a team using *!ulti/set team <your team name>*. Note: if you still don't see what you expect, there may be multiple teams with your name. If this is case, find your team on ultimate.org.nz and set your team using what appears in the URL (you should see something like ultimate.org.nz/t/epic-team-name-3).");
 const $9f891ff97f3b7cc5$export$5d5140bde1887739 = async (message)=>{
     const permissions = JSON.parse('{\n    "banned": [],\n    "otherAdmins": []\n}');
     const sender = await message.getContact();
     return message.fromMe || permissions.otherAdmins.includes(sender.id.user);
 };
+
 
 
 
@@ -40,8 +76,8 @@ class $2407f3867a98a921$export$cc7e12c76513e857 {
     }
 }
 class $2407f3867a98a921$export$fb8073518f34e6ec {
-    commands = [];
     constructor(name, desc, hasProps = false){
+        this.commands = [];
         this.name = name;
         this.desc = desc;
         // if the collection has properties, add the set, unset, and get commands
@@ -50,7 +86,9 @@ class $2407f3867a98a921$export$fb8073518f34e6ec {
                 "property",
                 "value"
             ], "Set a property of this collection", async (message, args)=>{
-                const [prop, value] = args.split(/\s(.*)/s);
+                console.log(JSON.stringify(args));
+                console.log((0, $9f891ff97f3b7cc5$export$7300a92932ee17a3)(args));
+                const [prop, value] = (0, $9f891ff97f3b7cc5$export$7300a92932ee17a3)(args);
                 const chat = await message.getChat();
                 if (!prop) {
                     chat.sendMessage("*[bot]* Please specify a property to set.");
@@ -154,8 +192,9 @@ var $98f72328a9884da6$export$2e2bcd8739ae039 = $98f72328a9884da6$var$baseCollect
 
 
 
-const $9bb0f010631b46ac$var$ultiCollection = new (0, $2407f3867a98a921$export$fb8073518f34e6ec)("ulti", "This collection contains commands for ultimate frisbee. All commands start with *!ulti/* and can be seen below:", true);
-$9bb0f010631b46ac$var$ultiCollection.commands.unshift(new (0, $2407f3867a98a921$export$cc7e12c76513e857)("numbers", [], "See how many people are playing", async (message, _, collection)=>{
+const $9bb0f010631b46ac$var$ultiCollection = new (0, $2407f3867a98a921$export$fb8073518f34e6ec)("ulti", "This collection contains commands for ultimate frisbee. All commands start with *!ulti/* and can be seen below:", true // give the collection the set, unset, and get commands
+);
+$9bb0f010631b46ac$var$ultiCollection.commands.unshift(new (0, $2407f3867a98a921$export$cc7e12c76513e857)("numbers", [], "See how many people are playing", async (message)=>{
     const chat = await message.getChat();
     if (chat.isGroup) {
         // get the message id of the whosPlaying message
@@ -177,7 +216,7 @@ $9bb0f010631b46ac$var$ultiCollection.commands.unshift(new (0, $2407f3867a98a921$
                     const numOfPlayers = reactions.find((reaction)=>reaction.aggregateEmoji === "\uD83D\uDC4D")?.senders.length ?? 0;
                     // get the number of people who are NOT playing
                     const notPlaying = reactions.find((reaction)=>reaction.aggregateEmoji === "\uD83D\uDC4E")?.senders.length ?? 0;
-                    const props = collection.props((0, $22fd70b2233cc903$export$55427e926be628d4), chat);
+                    const props = $9bb0f010631b46ac$var$ultiCollection.props((0, $22fd70b2233cc903$export$55427e926be628d4), chat);
                     // if the teamsize property doesn't exist, set it to 4 (for indoors)
                     if (!props.has("teamsize")) props.set("teamsize", "4");
                     const teamSize = parseInt(props.get("teamsize"));
@@ -219,6 +258,11 @@ class $9bb0f010631b46ac$var$Game {
             return scoreEl.map((el)=>parseInt(el.innerHTML));
         });
     }
+    async spirit() {
+        return await this.node.$eval(".schedule-score-box-game-result", (spiritEl)=>{
+            return parseInt(spiritEl.innerText);
+        });
+    }
     async time() {
         return await this.node.$eval(".push-right", (node)=>{
             return node.innerHTML.trim();
@@ -251,7 +295,7 @@ class $9bb0f010631b46ac$var$Game {
         return parseInt(str);
     }
 }
-const $9bb0f010631b46ac$var$getGames = async (url)=>{
+const $9bb0f010631b46ac$var$getGames = async (url, chat)=>{
     // make browser not headless so we can see what's going on, and not close it when we're done
     const browser = await $3SLR2$puppeteer.launch({
         headless: "new"
@@ -259,7 +303,11 @@ const $9bb0f010631b46ac$var$getGames = async (url)=>{
     const page = await browser.newPage();
     // set default timeout to 15 seconds
     await page.setDefaultTimeout(15000);
-    await page.goto(url);
+    try {
+        await page.goto(url);
+    } catch (_) {
+        chat.sendMessage(`*[bot]* Sorry, I couldn't find any games on ${url}`);
+    }
     // set screen size to 1080p
     await page.setViewport({
         width: 1080,
@@ -282,12 +330,89 @@ const $9bb0f010631b46ac$var$getGames = async (url)=>{
         };
     }
 };
-$9bb0f010631b46ac$var$ultiCollection.commands.unshift(new (0, $2407f3867a98a921$export$cc7e12c76513e857)("next", [], "Gets details about our next game", async (message, _, collection)=>{
+$9bb0f010631b46ac$var$ultiCollection.commands.unshift(new (0, $2407f3867a98a921$export$cc7e12c76513e857)("ranking", [], 'Shows the standings in the event specified in the "event" property', async (message)=>{
     const chat = await message.getChat();
-    const teamName = collection.props((0, $22fd70b2233cc903$export$55427e926be628d4), chat).get("team");
+    const team = $9bb0f010631b46ac$var$ultiCollection.props((0, $22fd70b2233cc903$export$55427e926be628d4), chat).get("team");
+    const event = $9bb0f010631b46ac$var$ultiCollection.props((0, $22fd70b2233cc903$export$55427e926be628d4), chat).get("event");
+    if (!team || !event) {
+        if (!team && !event) {
+            message.reply("*[bot]* Please specify a team and event using *!ulti/set team <team name>* and *!ulti/set event <event name>*");
+            return;
+        }
+        if (!team) message.reply("*[bot]* Please specify a team using *!ulti/set team <team name>*");
+        if (!event) message.reply("*[bot]* Please specify an event using *!ulti/set event <event name>* (just copy/paste from the website).");
+        return;
+    }
+    const browser = await $3SLR2$puppeteer.launch({
+        headless: "new"
+    });
+    const page = await browser.newPage();
+    await page.setDefaultTimeout(15000);
+    const url = `https://wellington.ultimate.org.nz/e/${(0, $9f891ff97f3b7cc5$export$a1cfd4c88b9f5722)(event)}/standings`;
+    await page.goto(url);
+    const teams = (await (0, $9f891ff97f3b7cc5$export$4c7897fafd92b108)(await page.$$(".striped-blocks")).evaluate((node)=>{
+        return Array.from(node.getElementsByClassName("striped-block")).map((node)=>({
+                name: node.querySelector(".plain-link").innerHTML,
+                rank: null,
+                pointDiff: node.querySelectorAll(".span4")[4].innerHTML
+            }));
+    })).map((team, index)=>(team.rank = index + 1, team));
+    console.log(teams);
+    let rankingMessage = `*[bot]* Here are the standings for ${event} (there are ${teams.length} in total):\n\n\`\`\``;
+    const ourRank = teams.find((team)=>team.name.toLowerCase() === $9bb0f010631b46ac$var$ultiCollection.props((0, $22fd70b2233cc903$export$55427e926be628d4), chat).get("team").toLowerCase())?.rank;
+    if (!ourRank) {
+        chat.sendMessage(`*[bot]* Sorry, I couldn't find "${team}" in the standings for ${event}.`);
+        return;
+    }
+    // 2 teams above us, us, and 2 teams below
+    const nearbyTeams = [];
+    // rank of the first team in the nearby teams
+    const firstNearbyTeamRank = ourRank > teams.length - 2 // if we're in the bottom two
+     ? teams.length - 5 // show the bottom 5
+     : Math.max(0, ourRank - 3);
+    for(let i = 0; i < 5; i++)nearbyTeams.push(teams[i + firstNearbyTeamRank]);
+    const MAX_MSG_WIDTH = 27;
+    const maxRankLength = nearbyTeams.slice().sort((a, b)=>b.rank - a.rank)[0].rank.toString().length;
+    const maxPointDiffLength = nearbyTeams.slice().sort((a, b)=>b.pointDiff.length - a.pointDiff.length)[0].pointDiff.length;
+    const maxNameLength = MAX_MSG_WIDTH - maxRankLength - 3 - maxPointDiffLength - 2;
+    // adds a team to the table in the message
+    const addTeam = (team)=>{
+        // truncate name if it's too long and pad it to the right length
+        let name = team.name.slice(0, maxNameLength).padEnd(maxNameLength);
+        // add ellipsis if it was truncated
+        if (team.name.length > maxNameLength) name = name.slice(0, -1) + "…";
+        rankingMessage += `${team.rank.toString().padStart(maxRankLength)} | ${name}  ${team.pointDiff.padEnd(maxPointDiffLength)}\n`;
+    };
+    // if the top team isn't in nearbyTeams
+    if (nearbyTeams[0].rank !== 1) addTeam(teams[0]);
+    // if there are teams between the top one and nearby teams
+    if (nearbyTeams[0].rank > 2) rankingMessage += " ".repeat(maxRankLength) + " | ...\n";
+    nearbyTeams.forEach(addTeam);
+    // if there are teams between the bottom one and nearby teams
+    if (nearbyTeams[nearbyTeams.length - 1].rank < teams.length) rankingMessage += " ".repeat(maxRankLength) + " | ...\n";
+    rankingMessage += "```\nYou can see the full standings at " + url.slice(8);
+    chat.sendMessage(rankingMessage);
+    browser.close();
+}));
+$9bb0f010631b46ac$var$ultiCollection.commands.unshift(new (0, $2407f3867a98a921$export$cc7e12c76513e857)("spirit", [], "Shows our spirit rating of our last game", async (message)=>{
+    const chat = await message.getChat();
+    const teamName = $9bb0f010631b46ac$var$ultiCollection.props((0, $22fd70b2233cc903$export$55427e926be628d4), chat).get("team");
+    if (teamName) {
+        const url = `https://ultimate.org.nz/t/${(0, $9f891ff97f3b7cc5$export$a1cfd4c88b9f5722)(teamName)}/schedule/game_type/with_result`;
+        const { games: games, browser: browser } = await $9bb0f010631b46ac$var$getGames(url, chat);
+        if (games.length) {
+            const spirit = await games[0].spirit();
+            chat.sendMessage(`*[bot]* Our spirit rating for our last game was ${spirit}.`);
+        } else chat.sendMessage(`*[bot]* Sorry, I couldn't find any games on ${url}.`);
+        browser.close();
+    } else (0, $9f891ff97f3b7cc5$export$ec14613d64f35cd0)(chat);
+}));
+$9bb0f010631b46ac$var$ultiCollection.commands.unshift(new (0, $2407f3867a98a921$export$cc7e12c76513e857)("next", [], "Gets details about our next game", async (message)=>{
+    const chat = await message.getChat();
+    const teamName = $9bb0f010631b46ac$var$ultiCollection.props((0, $22fd70b2233cc903$export$55427e926be628d4), chat).get("team");
     if (teamName) {
         const url = `https://ultimate.org.nz/t/${(0, $9f891ff97f3b7cc5$export$a1cfd4c88b9f5722)(teamName)}/schedule/event_id/active_events_only/game_type/upcoming`;
-        const { games: games , browser: browser  } = await $9bb0f010631b46ac$var$getGames(url);
+        const { games: games, browser: browser } = await $9bb0f010631b46ac$var$getGames(url, chat);
         const gamesWithTimestamps = await Promise.all(games.map(async (game)=>({
                 game: game,
                 timestamp: await game.timestamp()
@@ -297,18 +422,18 @@ $9bb0f010631b46ac$var$ultiCollection.commands.unshift(new (0, $2407f3867a98a921$
         const currentTimestamp = parseInt(date.getFullYear() + (0, $9f891ff97f3b7cc5$export$5d04600fe9c47a27)(date.getMonth()) + (0, $9f891ff97f3b7cc5$export$5d04600fe9c47a27)(date.getDate()) + (0, $9f891ff97f3b7cc5$export$5d04600fe9c47a27)(date.getHours()) + (0, $9f891ff97f3b7cc5$export$5d04600fe9c47a27)(date.getMinutes()));
         if (gamesWithTimestamps.length === 0) chat.sendMessage(`*[bot]* No upcoming games on ${url}.`);
         else {
-            const nextGame = gamesWithTimestamps.filter(({ timestamp: timestamp  })=>timestamp > currentTimestamp).reduce((acc, cur)=>cur.timestamp > acc.timestamp ? acc : cur).game;
+            const nextGame = gamesWithTimestamps.filter(({ timestamp: timestamp })=>timestamp > currentTimestamp).reduce((acc, cur)=>cur.timestamp > acc.timestamp ? acc : cur).game;
             chat.sendMessage(`*[bot]* Our next game is at ${await nextGame.time()} against ${await nextGame.opponent()} at ${await nextGame.location()} (${await nextGame.day()}).`);
         }
         browser.close();
     } else (0, $9f891ff97f3b7cc5$export$ec14613d64f35cd0)(chat);
 }));
-$9bb0f010631b46ac$var$ultiCollection.commands.unshift(new (0, $2407f3867a98a921$export$cc7e12c76513e857)("score", [], "Gets the score of the last game", async (message, _, collection)=>{
+$9bb0f010631b46ac$var$ultiCollection.commands.unshift(new (0, $2407f3867a98a921$export$cc7e12c76513e857)("score", [], "Gets the score of the last game", async (message)=>{
     const chat = await message.getChat();
-    const teamName = collection.props((0, $22fd70b2233cc903$export$55427e926be628d4), chat).get("team");
+    const teamName = $9bb0f010631b46ac$var$ultiCollection.props((0, $22fd70b2233cc903$export$55427e926be628d4), chat).get("team");
     if (teamName) {
         const url = `https://ultimate.org.nz/t/${(0, $9f891ff97f3b7cc5$export$a1cfd4c88b9f5722)(teamName)}/schedule/game_type/with_result`;
-        const { games: games , browser: browser  } = await $9bb0f010631b46ac$var$getGames(url);
+        const { games: games, browser: browser } = await $9bb0f010631b46ac$var$getGames(url, chat);
         if (games.length) {
             const [ourScore, theirScore] = await games[0].result();
             if (ourScore && theirScore) {
@@ -545,9 +670,9 @@ var $3055ea6de07cbf1b$export$2e2bcd8739ae039 = $3055ea6de07cbf1b$var$adminCollec
 
 
 class $7cc62b2cd01beb1e$export$4d533b9d60e59fa4 {
-    banned = new Set();
-    otherAdmins = new Set();
     constructor(filename){
+        this.banned = new Set();
+        this.otherAdmins = new Set();
         this.filename = filename;
     }
     save() {
@@ -612,12 +737,12 @@ $22fd70b2233cc903$export$388e0302ca0d9a41.on("message_create", async (message)=>
             const command = body.split(" ")[0];
             collectionName = command.split("/")[0].slice(1);
             commandName = command.split("/").slice(1).join("/");
-            args = body.split(" ").slice(1).join(" ");
         } else {
             collectionName = "base";
             commandName = body.split(" ")[0].slice(1);
-            args = body.split(" ").slice(1).join(" ");
         }
+        console.log(message.body, body.split(" "), body.split(" ").slice(1));
+        args = body.split(" ").slice(1).join(" ");
         if (!globalThis.awake && !(collectionName === "admin" && commandName === "wake")) return;
         for (const collection of $22fd70b2233cc903$export$167de583c0ce0e55)if (collection.name === collectionName) {
             for (const command of collection.commands)if (command.name === commandName && Date.now() - $22fd70b2233cc903$var$timeOfLastCommand > $22fd70b2233cc903$var$cooldown) {

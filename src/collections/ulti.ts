@@ -1,22 +1,22 @@
-import type { GroupChat } from "whatsapp-web.js";
+import type { Chat, GroupChat } from "whatsapp-web.js";
 
 import * as puppeteer from "puppeteer";
 import { ElementHandle } from "puppeteer";
 
 import { Collection, Command } from "../core";
-import { hyphenateForURL, padTwo0s, pleaseSetTeam, pluralS } from "../helpers";
+import { hyphenateForURL, last, padTwo0s, pleaseSetTeam, pluralS } from "../helpers";
 import { session } from "../bot";
 
 const ultiCollection = new Collection(
     "ulti",
     "This collection contains commands for ultimate frisbee. All commands start with *!ulti/* and can be seen below:",
-    true
+    true // give the collection the set, unset, and get commands
 );
 
 ultiCollection.commands.unshift(new Command(
     "numbers", [],
     "See how many people are playing",
-    async (message, _, collection) => {
+    async message => {
         const chat = await message.getChat() as GroupChat;
 
         if (chat.isGroup) { // only allow command in group chats
@@ -48,7 +48,7 @@ ultiCollection.commands.unshift(new Command(
                             .find(reaction => reaction.aggregateEmoji === "👎")
                             ?.senders.length ?? 0;
 
-                        const props = collection!.props(session, chat);
+                        const props = ultiCollection!.props(session, chat);
 
                         // if the teamsize property doesn't exist, set it to 4 (for indoors)
                         if (!props.has("teamsize")) {
@@ -121,6 +121,12 @@ class Game {
         })) as [number, number];
     }
 
+    async spirit(): Promise<number> {
+        return await this.node.$eval(".schedule-score-box-game-result", spiritEl => {
+            return parseInt((spiritEl as HTMLDivElement).innerText);
+        });
+    }
+
     async time(): Promise<string> {
         return (await this.node.$eval(".push-right", node => {
             return node.innerHTML.trim();
@@ -176,7 +182,7 @@ class Game {
     }
 }
 
-const getGames = async (url: string): Promise<{
+const getGames = async (url: string, chat: Chat): Promise<{
     games: Game[], browser: puppeteer.Browser
 }> => {
     // make browser not headless so we can see what's going on, and not close it when we're done
@@ -186,7 +192,11 @@ const getGames = async (url: string): Promise<{
     // set default timeout to 15 seconds
     await page.setDefaultTimeout(15_000);
 
-    await page.goto(url);
+    try {
+        await page.goto(url);
+    } catch (_) {
+        chat.sendMessage(`*[bot]* Sorry, I couldn't find any games on ${url}`)
+    }
 
     // set screen size to 1080p
     await page.setViewport({ width: 1080, height: 1024 });
@@ -210,16 +220,155 @@ const getGames = async (url: string): Promise<{
 };
 
 ultiCollection.commands.unshift(new Command(
-    "next", [],
-    "Gets details about our next game",
-    async (message, _, collection) => {
+    "ranking", [],
+    "Shows the standings in the event specified in the \"event\" property",
+    async message => {
         const chat = await message.getChat();
 
-        const teamName = collection.props(session, chat).get("team");
+        const team = ultiCollection.props(session, chat).get("team");
+        const event = ultiCollection.props(session, chat).get("event");
+
+        if (!team || !event) {
+            if (!team && !event) {
+                message.reply("*[bot]* Please specify a team and event using *!ulti/set team <team name>* and *!ulti/set event <event name>*");
+                return;
+            }
+
+            if (!team) message.reply("*[bot]* Please specify a team using *!ulti/set team <team name>*")
+            if (!event) message.reply("*[bot]* Please specify an event using *!ulti/set event <event name>* (just copy/paste from the website).");
+
+            return;
+        }
+
+        const browser = await puppeteer.launch({ headless: "new" });
+
+        const page = await browser.newPage();
+
+        await page.setDefaultTimeout(15_000);
+
+        const url = `https://wellington.ultimate.org.nz/e/${hyphenateForURL(event)}/standings`
+
+        await page.goto(url);
+
+        interface Team {
+            name: string,
+            rank: number,
+            pointDiff: string,
+        }
+
+        const teams: Team[] = (await last(await page.$$(".striped-blocks")).evaluate(node => {
+            return Array.from(node.getElementsByClassName("striped-block")).map(node => ({
+                name: node.querySelector(".plain-link").innerHTML,
+                rank: null,
+                pointDiff: node.querySelectorAll(".span4")[4].innerHTML
+            }))
+        })).map((team, index) => (team.rank = index + 1, team));
+
+        console.log(teams)
+
+        let rankingMessage = `*[bot]* Here are the standings for ${event} (there are ${teams.length} in total):\n\n\`\`\``;
+
+        const ourRank = teams.find(
+            team => team.name.toLowerCase() === ultiCollection.props(session, chat).get("team").toLowerCase()
+        )?.rank;
+
+        if (!ourRank) {
+            chat.sendMessage(`*[bot]* Sorry, I couldn't find "${team}" in the standings for ${event}.`);
+            return;
+        }
+
+        // 2 teams above us, us, and 2 teams below
+        const nearbyTeams: Team[] = [];
+
+        // rank of the first team in the nearby teams
+        const firstNearbyTeamRank = ourRank > teams.length - 2 // if we're in the bottom two
+            ? teams.length - 5 // show the bottom 5
+            : Math.max(0, ourRank - 3);
+
+        for (let i = 0; i < 5; i++) {
+            nearbyTeams.push(teams[i + firstNearbyTeamRank]);
+        }
+
+        const MAX_MSG_WIDTH = 27;
+
+        const maxRankLength = nearbyTeams.slice().sort((a, b) => b.rank - a.rank)[0].rank.toString().length;
+        const maxPointDiffLength = nearbyTeams.slice().sort((a, b) => b.pointDiff.length - a.pointDiff.length)[0].pointDiff.length;
+        const maxNameLength = MAX_MSG_WIDTH - maxRankLength - 3 - maxPointDiffLength - 2;
+
+        // adds a team to the table in the message
+        const addTeam = (team: Team): void => {
+            // truncate name if it's too long and pad it to the right length
+            let name = team.name.slice(0, maxNameLength).padEnd(maxNameLength);
+
+            // add ellipsis if it was truncated
+            if (team.name.length > maxNameLength) name = name.slice(0, -1) + "…";
+
+            rankingMessage += `${team.rank.toString().padStart(maxRankLength)} | ${name}  ${team.pointDiff.padEnd(maxPointDiffLength)}\n`;
+        }
+
+        // if the top team isn't in nearbyTeams
+        if (nearbyTeams[0].rank !== 1) {
+            addTeam(teams[0]);
+        }
+
+        // if there are teams between the top one and nearby teams
+        if (nearbyTeams[0].rank > 2) {
+            rankingMessage += " ".repeat(maxRankLength) + " | ...\n";
+        }
+
+        nearbyTeams.forEach(addTeam);
+
+        // if there are teams between the bottom one and nearby teams
+        if (nearbyTeams[nearbyTeams.length - 1].rank < teams.length) {
+            rankingMessage += " ".repeat(maxRankLength) + " | ...\n";
+        }
+
+        rankingMessage += "```\nYou can see the full standings at " + url.slice(8);
+
+        chat.sendMessage(rankingMessage);
+
+        browser.close();
+    }
+));
+
+ultiCollection.commands.unshift(new Command(
+    "spirit", [],
+    "Shows our spirit rating of our last game",
+    async message => {
+        const chat = await message.getChat();
+
+        const teamName = ultiCollection.props(session, chat).get("team");
+
+        if (teamName) {
+            const url = `https://ultimate.org.nz/t/${hyphenateForURL(teamName)}/schedule/game_type/with_result`;
+            const { games, browser } = await getGames(url, chat);
+
+            if (games.length) {
+                const spirit = await games[0].spirit();
+
+                chat.sendMessage(`*[bot]* Our spirit rating for our last game was ${spirit}.`);
+            } else {
+                chat.sendMessage(`*[bot]* Sorry, I couldn't find any games on ${url}.`);
+            }
+
+            browser.close();
+        } else {
+            pleaseSetTeam(chat);
+        }
+    }
+));
+
+ultiCollection.commands.unshift(new Command(
+    "next", [],
+    "Gets details about our next game",
+    async message => {
+        const chat = await message.getChat();
+
+        const teamName = ultiCollection.props(session, chat).get("team");
 
         if (teamName) { // if a team is set
             const url = `https://ultimate.org.nz/t/${hyphenateForURL(teamName)}/schedule/event_id/active_events_only/game_type/upcoming`;
-            const { games, browser } = await getGames(url);
+            const { games, browser } = await getGames(url, chat);
 
             const gamesWithTimestamps = await Promise.all(games.map(
                 async game => ({ game, timestamp: await game.timestamp() })
@@ -256,14 +405,14 @@ ultiCollection.commands.unshift(new Command(
 ultiCollection.commands.unshift(new Command(
     "score", [],
     "Gets the score of the last game",
-    async (message, _, collection) => {
+    async message => {
         const chat = await message.getChat();
 
-        const teamName = collection.props(session, chat).get("team");
+        const teamName = ultiCollection.props(session, chat).get("team");
 
         if (teamName) {
             const url = `https://ultimate.org.nz/t/${hyphenateForURL(teamName)}/schedule/game_type/with_result`;
-            const { games, browser } = await getGames(url);
+            const { games, browser } = await getGames(url, chat);
 
             if (games.length) {
                 const [ourScore, theirScore] = await games[0].result();

@@ -1,24 +1,61 @@
 import type { Chat, Message } from "whatsapp-web.js";
 import { readFileSync } from "fs";
 
-export const randomChoice = (arr: any[]) => {
+export const randomChoice = <T>(arr: T[]): T => {
     return arr[Math.floor(Math.random() * arr.length)];
 };
 
-export const hyphenateForURL = (str: string) => str
+export const hyphenateForURL = (str: string): string => str
     .toLowerCase()
     .replace(/ /g, "-")
     .replace(/\.'/g, "");
 
-export const removeStyling = (str: string) => str
+export const removeStyling = (str: string): string => str
     .replace(/\*([^ ]+)\*/g, "$1")
     .replace(/_([^ ]+)_/g, "$1")
     .replace(/~([^ ]+)~/g, "$1")
     .replace(/```([^ ]+)```/g, "$1");
 
-export const nthLast = (arr: any[], n: number) => arr[arr.length - n];
+export const last = <T extends { length: number }>(
+    iterable: T
+): T extends (infer ElType)[] ? ElType : string => iterable[iterable.length - 1];
+
 export const pluralS = (n: number) => n === 1 ? "" : "s";
 export const padTwo0s = (num: number) => num.toString().padStart(2, "0");
+
+export const parseArgs = (str: string): string[] => {
+    // this is can probably be done with a regex but too bad
+
+    const args: string[] = [];
+    let state: "string" | "other" | null = null;
+    let startedWith: "'" | '"'; // what the string started with
+
+    for (const char of str) {
+        if (state === null && char !== " ") {
+            if (`'"`.includes(char)) {
+                args.push("");
+                startedWith = char as "'" | '"';
+                state = "string";
+            } else {
+                args.push(char);
+                state = "other";
+            }
+        } else if (state === "string") {
+            if (char === startedWith) {
+                if (last(last(args)) !== "\\" || last(args).slice(-2) === "\\\\") {
+                    state = null
+                    startedWith = null;
+                }
+            }
+            else args[args.length - 1] += char;
+        } else {
+            if (char === " ") state = null;
+            else args[args.length - 1] += char;
+        }
+    }
+
+    return args;
+}
 
 export const pleaseSetTeam = (chat: Chat) => chat.sendMessage(
     "*[bot]* Please specify a team using *!ulti/set team <your team name>*. Note: if you still don't see what you expect, there may be multiple teams with your name. If this is case, find your team on ultimate.org.nz and set your team using what appears in the URL (you should see something like ultimate.org.nz/t/epic-team-name-3)."

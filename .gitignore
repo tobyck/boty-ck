@@ -5,7 +5,11 @@ node_modules
 # bot data
 session.json
 permissions.json
+.wwebjs_cache
 
 # log files
 stdout.log
 stderr.log
+
+# goddammit i hate these
+.DS_Store

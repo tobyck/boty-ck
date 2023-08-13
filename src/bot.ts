@@ -64,12 +64,14 @@ client.on("message_create", async message => {
             const command = body.split(" ")[0];
             collectionName = command.split("/")[0].slice(1);
             commandName = command.split("/").slice(1).join("/");
-            args = body.split(" ").slice(1).join(" ");
         } else {
             collectionName = "base";
             commandName = body.split(" ")[0].slice(1);
-            args = body.split(" ").slice(1).join(" ");
         }
+
+        console.log(message.body, body.split(" "), body.split(" ").slice(1));
+
+        args = body.split(" ").slice(1).join(" ");
 
         if (!globalThis.awake && !(collectionName === "admin" && commandName === "wake")) return;
 

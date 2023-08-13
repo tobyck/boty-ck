@@ -1,5 +1,6 @@
 import type { Chat, Message } from "whatsapp-web.js";
 import { session } from "./bot";
+import { parseArgs } from "./helpers";
 import { Session } from "./session";
 
 // type for Command.func
@@ -40,7 +41,9 @@ export class Collection {
                 "set", ["property", "value"],
                 "Set a property of this collection",
                 async (message, args) => {
-                    const [prop, value] = args!.split(/\s(.*)/s);
+                    console.log(JSON.stringify(args))
+                    console.log(parseArgs(args!))
+                    const [prop, value] = parseArgs(args!);
 
                     const chat = await message.getChat();
 
