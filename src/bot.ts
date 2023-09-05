@@ -22,9 +22,10 @@ export const session = new Session("session.json");
 export const permissions = new BotPermissions("permissions.json");
 export const client = new Client({});
 
-globalThis.awake = true;
-
 session.load();
+permissions.load();
+
+globalThis.awake = true;
 
 let timeOfLastCommand = Date.now();
 const cooldown = 3000;
@@ -35,13 +36,13 @@ client.on("qr", qr => {
 });
 
 // notify when client is ready
-client.on("ready", () => {
+client.on("ready", async () => {
     // eslint-disable-next-line
     console.log(`Client is ready (${client.info.pushname}, ${client.info.wid.user})`);
 
     // send the owner a message if they specified one
     const returnMessage = process.argv[2];
-    if (returnMessage) client.sendMessage(client.info.wid._serialized, `*[bot]* ${returnMessage}`);
+    if (returnMessage) await client.sendMessage(client.info.wid._serialized, `*[bot]* ${returnMessage}`);
 });
 
 // notify when client has disconnected
@@ -100,8 +101,12 @@ client.on("message_create", async message => {
     }
 });
 
+/* eslint-disable no-console */
+
 // bring Boty Copper-Kettle to life
-client.initialize();
+client.initialize().then(() => {
+    console.log("Client initialized");
+}).catch(console.error);
 
 // save session data and permissions when the bot dies
 process.on("exit", () => {

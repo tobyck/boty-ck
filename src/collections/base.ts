@@ -18,9 +18,9 @@ baseCollection.commands.unshift(new Command(
     "Gives you a cookie",
     async message => {
         if (Math.random() < .1) {
-            message.reply("*[bot]* No.");
+            await message.reply("*[bot]* No.");
         } else {
-            message.reply("*[bot]* Here you go: 🍪");
+            await message.reply("*[bot]* Here you go: 🍪");
         }
     }
 ));
@@ -45,9 +45,9 @@ baseCollection.commands.unshift(new Command(
                 contacts.push(contact);
             }
 
-            chat.sendMessage(text.join(" "), { mentions: contacts });
+            await chat.sendMessage(text.join(" "), {mentions: contacts});
         } else {
-            chat.sendMessage("*[bot]* This command can only be used in a group chat.");
+            await chat.sendMessage("*[bot]* This command can only be used in a group chat.");
         }
     }
 ));
@@ -63,7 +63,7 @@ baseCollection.commands.unshift(new Command(
                 .map((status: string) => `${prefix}${prefix ? " " : ""}${status}`));
         }
 
-        message.reply(`*[bot]* ${randomChoice(statuses)}.`);
+        await message.reply(`*[bot]* ${randomChoice(statuses)}.`);
     }
 ));
 

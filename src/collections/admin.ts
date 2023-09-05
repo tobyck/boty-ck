@@ -1,5 +1,6 @@
 import fs from "fs";
 import { readFile } from "fs/promises";
+import process from "node:process";
 import { spawn } from "child_process";
 
 import { Collection, Command } from "../core";
@@ -7,7 +8,13 @@ import { fromAdmin, randomChoice } from "../helpers";
 import { client, permissions, session } from "../bot";
 import { Session } from "../session";
 
-const responses = JSON.parse(fs.readFileSync("./responses.json", "utf8"));
+const responses: {
+    statuses: Record<string, string[]>,
+    death: string[],
+    restart: string[],
+    sleep: string[],
+    awake: string[]
+} = JSON.parse(fs.readFileSync("./responses.json", "utf8"));
 
 const adminCollection = new Collection(
     "admin",
@@ -18,12 +25,12 @@ adminCollection.commands.unshift(new Command(
     "new-session", [],
     "Clears current session data",
     async message => {
-        if (!fromAdmin(message)) return;
+        if (!await fromAdmin(message)) return;
 
         session.data = Session.blankSession();
 
         const chat = await message.getChat();
-        chat.sendMessage("*[bot]* Current session data has been cleared.");
+        await chat.sendMessage("*[bot]* Current session data has been cleared.");
     }
 ));
 
@@ -31,7 +38,7 @@ adminCollection.commands.unshift(new Command(
     "force-save", [],
     "Forces the bot to save session data and permissions",
     async message => {
-        if (!fromAdmin(message)) return;
+        if (!await fromAdmin(message)) return;
 
         session.save();
         permissions.save();
@@ -42,7 +49,7 @@ adminCollection.commands.unshift(new Command(
     "update", [],
     "Pulls the latest changes from GitHub",
     async message => {
-        if (!fromAdmin(message)) return;
+        if (!await fromAdmin(message)) return;
 
         const childProc = spawn("git", "pull origin master".split(" "), {
             detached: true,
@@ -68,7 +75,7 @@ adminCollection.commands.unshift(new Command(
 
         const chat = await message.getChat();
 
-        chat.sendMessage("*[bot]* I'm currently being restarted. My owner will be sent a QR code to bring me back online and will have 1 minute to scan it on web.whatsapp.com.");
+        await chat.sendMessage("*[bot]* I'm currently being restarted. My owner will be sent a QR code to bring me back online and will have 1 minute to scan it on web.whatsapp.com.");
 
         const stdout = fs.openSync("./stdout.log", "a");
         const stderr = fs.openSync("./stderr.log", "a");
@@ -90,7 +97,7 @@ adminCollection.commands.unshift(new Command(
                 const stdoutLines = data.split("\n");
 
                 if (stdoutLines.length >= QR_CODE_HEIGHT && !gotQrCode) {
-                    // send the qr code to the bot's owner
+                    // send the qr code to the bot owner
                     client.sendMessage(message.from, `*[bot]* Scan this to restart the bot:\n\`\`\`${stdoutLines.slice(-QR_CODE_HEIGHT - 1, -1).join("\n")}\`\`\``);
 
                     gotQrCode = true;
@@ -123,7 +130,7 @@ adminCollection.commands.unshift(new Command(
     "wake", [],
     "Awakes the bot",
     async message => {
-        if (!fromAdmin(message)) return;
+        if (!await fromAdmin(message)) return;
 
         const chat = await message.getChat();
         await chat.sendMessage(`*[bot]* ${randomChoice(responses.awake)}`);
@@ -136,7 +143,7 @@ adminCollection.commands.unshift(new Command(
     "sleep", [],
     "Puts the bot to sleep",
     async message => {
-        if (!fromAdmin(message)) return;
+        if (!await fromAdmin(message)) return;
 
         const chat = await message.getChat();
         await chat.sendMessage(`*[bot]* ${randomChoice(responses.sleep)}`);
@@ -149,11 +156,11 @@ adminCollection.commands.unshift(new Command(
     "die", [],
     "Kills the bot",
     async message => {
-        if (!fromAdmin(message)) return;
+        if (!await fromAdmin(message)) return;
 
         const chat = await message.getChat();
 
-        chat.sendMessage(`*[bot]* ${randomChoice(responses.death)}`);
+        await chat.sendMessage(`*[bot]* ${randomChoice(responses.death)}`);
         // wait a second before disconnecting because the promise
         // returned by chat.sendMessage seems to not work
         setTimeout(client.destroy.bind(client), 1000);
@@ -164,18 +171,18 @@ adminCollection.commands.unshift(new Command(
     "disallow/admin", ["phone number"],
     "Removes a user's admin privileges",
     async (message, phoneNumber) => {
-        if (!fromAdmin(message)) return;
+        if (!await fromAdmin(message)) return;
         phoneNumber = phoneNumber.replace(/\s\+/g, "");
 
-        if (phoneNumber.match(/[^\d]/)) {
-            message.reply("*[bot]* Please enter a valid phone number.");
+        if (phoneNumber.match(/\D/)) {
+            await message.reply("*[bot]* Please enter a valid phone number.");
             return;
         }
 
         permissions.otherAdmins.delete(phoneNumber);
 
         const chat = await message.getChat();
-        chat.sendMessage(`*[bot]* ${phoneNumber} has had their admin privileges revoked.`);
+        await chat.sendMessage(`*[bot]* ${phoneNumber} has had their admin privileges revoked.`);
     }
 ));
 
@@ -183,18 +190,18 @@ adminCollection.commands.unshift(new Command(
     "allow/admin", ["phone number"],
     "Gives a user admin privileges",
     async (message, phoneNumber) => {
-        if (!fromAdmin(message)) return;
+        if (!await fromAdmin(message)) return;
         phoneNumber = phoneNumber.replace(/\s\+/g, "");
 
-        if (phoneNumber.match(/[^\d]/)) {
-            message.reply("*[bot]* Please enter a valid phone number.");
+        if (phoneNumber.match(/\D/)) {
+            await message.reply("*[bot]* Please enter a valid phone number.");
             return;
         }
 
         permissions.otherAdmins.add(phoneNumber);
 
         const chat = await message.getChat();
-        chat.sendMessage(`*[bot]* ${phoneNumber} has been given admin privileges.`);
+        await chat.sendMessage(`*[bot]* ${phoneNumber} has been given admin privileges.`);
     }
 ));
 
@@ -202,22 +209,22 @@ adminCollection.commands.unshift(new Command(
     "disallow/user", ["phone number"],
     "Bans a user from using the bot",
     async (message, phoneNumber) => {
-        if (!fromAdmin(message)) return;
+        if (!await fromAdmin(message)) return;
         phoneNumber = phoneNumber.replace(/\s\+/g, "");
 
-        if (phoneNumber.match(/[^\d]/)) {
-            message.reply("*[bot]* Please enter a valid phone number.");
+        if (phoneNumber.match(/\D/)) {
+            await message.reply("*[bot]* Please enter a valid phone number.");
             return;
         }
 
         // ignore if trying to ban the owner
-        const ownerPhoneNumber = await client.info.wid.user;
+        const ownerPhoneNumber = client.info.wid.user;
         if (ownerPhoneNumber === phoneNumber) return;
 
         permissions.banned.add(phoneNumber);
 
         const chat = await message.getChat();
-        chat.sendMessage(`*[bot]* ${phoneNumber} has been banned.`);
+        await chat.sendMessage(`*[bot]* ${phoneNumber} has been banned.`);
     }
 ));
 
@@ -225,18 +232,18 @@ adminCollection.commands.unshift(new Command(
     "allow/user", ["phone number"],
     "Removes a user's ban from using the bot",
     async (message, phoneNumber) => {
-        if (!fromAdmin(message)) return;
+        if (!await fromAdmin(message)) return;
         phoneNumber = phoneNumber.replace(/\s\+/g, "");
 
-        if (phoneNumber.match(/[^\d]/)) {
-            message.reply("*[bot]* Please enter a valid phone number.");
+        if (phoneNumber.match(/\D/)) {
+            await message.reply("*[bot]* Please enter a valid phone number.");
             return;
         }
 
         permissions.banned.delete(phoneNumber);
 
         const chat = await message.getChat();
-        chat.sendMessage(`*[bot]* ${phoneNumber} has been unbanned.`);
+        await chat.sendMessage(`*[bot]* ${phoneNumber} has been unbanned.`);
     }
 ));
 

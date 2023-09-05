@@ -48,7 +48,7 @@ export class Session {
         };
     }
 
-    // attemps to load a session
+    // attempts to load a session
     load(): void {
         if (fs.existsSync(this.fileName)) {
             // parse JSON from file
@@ -91,7 +91,7 @@ export class Session {
         fs.writeFileSync(this.fileName, JSON.stringify(serializable, null, 4));
     }
 
-    static blankSession<Serializable extends boolean = NonSerializable>(): SessionData<Serializable> {
+    static blankSession<T extends boolean = NonSerializable>(): SessionData<T> {
         return {
             chats: {}
         };

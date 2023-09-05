@@ -5,7 +5,7 @@ let [collection, name, description, args] = process.argv.slice(2);
 args &&= JSON.stringify(args.split(","), null, 1)
     .replace(/\n\s?/g, " ")
     .replace(/\[\s/, "[")
-    .replace(/\s\]/, "]");
+    .replace(/\s]/, "]");
     
 args ??= "[]";
 

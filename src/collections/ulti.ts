@@ -32,7 +32,7 @@ ultiCollection.commands.unshift(new Command(
                     msg => msg.id.id === whosPlayingMsgId
                 );
 
-                if (whosPlayingMsg) { // if could be found
+                if (whosPlayingMsg) { // if message could be found
                     // if anyone has reacted to the message yet
                     if (whosPlayingMsg.hasReaction) {
                         // get the reactions
@@ -58,7 +58,7 @@ ultiCollection.commands.unshift(new Command(
                         const teamSize = parseInt(props.get("teamsize")!);
 
                         if (teamSize < 1) {
-                            message.reply(`*[bot]* Team size is set to ${teamSize} but must be more than zero.`);
+                            await message.reply(`*[bot]* Team size is set to ${teamSize} but must be more than zero.`);
                             return;
                         }
 
@@ -66,27 +66,27 @@ ultiCollection.commands.unshift(new Command(
                         const numOfParticipants = chat.participants.length;
 
                         if (numOfParticipants < teamSize) {
-                            message.reply(`*[bot]* Your mininum team size is set to ${teamSize} but you have only ${numOfParticipants} ${numOfParticipants === 1 ? "person" : "people"} in this chat.`);
+                            await message.reply(`*[bot]* Your minimum team size is set to ${teamSize} but you have only ${numOfParticipants} ${numOfParticipants === 1 ? "person" : "people"} in this chat.`);
                             return;
                         }
 
                         if (numOfPlayers < teamSize) {
-                            message.reply(`*[bot]* So far we've got ${numOfPlayers || "no"} player${pluralS(numOfPlayers)}, so we need at least ${teamSize - numOfPlayers} more. ${numOfParticipants - numOfPlayers - notPlaying} people still to respond.`);
+                            await message.reply(`*[bot]* So far we've got ${numOfPlayers || "no"} player${pluralS(numOfPlayers)}, so we need at least ${teamSize - numOfPlayers} more. ${numOfParticipants - numOfPlayers - notPlaying} people still to respond.`);
                         } else {
                             const subs = numOfPlayers - teamSize;
-                            message.reply(`*[bot]* We've got ${numOfPlayers} player${pluralS(numOfPlayers)} (${subs || "no"} sub${pluralS(subs)}).`);
+                            await message.reply(`*[bot]* We've got ${numOfPlayers} player${pluralS(numOfPlayers)} (${subs || "no"} sub${pluralS(subs)}).`);
                         }
                     } else {
-                        message.reply("*[bot]* No one has reacted to the message with who's playing yet.");
+                        await message.reply("*[bot]* No one has reacted to the message with who's playing yet.");
                     }
                 } else {
-                    message.reply("*[bot]* Sorry, the message with who's playing is too far back.");
+                    await message.reply("*[bot]* Sorry, the message with who's playing is too far back.");
                 }
             } else {
-                message.reply("*[bot]* Use *!ulti/who* to ask who's playing and try again later.");
+                await message.reply("*[bot]* Use *!ulti/who* to ask who's playing and try again later.");
             }
         } else {
-            message.reply("*[bot]* This command can only be used in a group chat.");
+            await message.reply("*[bot]* This command can only be used in a group chat.");
         }
     }
 ));
@@ -103,7 +103,7 @@ ultiCollection.commands.unshift(new Command(
             session.data.chats[chat.name].whosPlayingMsgId = (await chat.sendMessage("*[bot]* Who's playing? React to with this message with 👍 or 👎.")).id.id;
             session.save(); // update the session data file
         } else {
-            message.reply("*[bot]* This command can only be used in a group chat.");
+            await message.reply("*[bot]* This command can only be used in a group chat.");
         }
     }
 ));
@@ -185,17 +185,17 @@ class Game {
 const getGames = async (url: string, chat: Chat): Promise<{
     games: Game[], browser: puppeteer.Browser
 }> => {
-    // make browser not headless so we can see what's going on, and not close it when we're done
+    // make browser not headless, so we can see what's going on, and not close it when we're done
     const browser = await puppeteer.launch({ headless: "new" });
     const page = await browser.newPage();
 
     // set default timeout to 15 seconds
-    await page.setDefaultTimeout(15_000);
+    page.setDefaultTimeout(15000);
 
     try {
         await page.goto(url);
     } catch (_) {
-        chat.sendMessage(`*[bot]* Sorry, I couldn't find any games on ${url}`);
+        await chat.sendMessage(`*[bot]* Sorry, I couldn't find any games on ${url}`);
     }
 
     // set screen size to 1080p
@@ -230,12 +230,12 @@ ultiCollection.commands.unshift(new Command(
 
         if (!team || !event) {
             if (!team && !event) {
-                message.reply("*[bot]* Please specify a team and event using *!ulti/set team <team name>* and *!ulti/set event <event name>*");
+                await message.reply("*[bot]* Please specify a team and event using *!ulti/set team <team name>* and *!ulti/set event <event name>*");
                 return;
             }
 
-            if (!team) message.reply("*[bot]* Please specify a team using *!ulti/set team <team name>*");
-            if (!event) message.reply("*[bot]* Please specify an event using *!ulti/set event <event name>* (just copy/paste from the website).");
+            if (!team) await message.reply("*[bot]* Please specify a team using *!ulti/set team <team name>*");
+            if (!event) await message.reply("*[bot]* Please specify an event using *!ulti/set event <event name>* (just copy/paste from the website).");
 
             return;
         }
@@ -244,7 +244,7 @@ ultiCollection.commands.unshift(new Command(
 
         const page = await browser.newPage();
 
-        await page.setDefaultTimeout(15_000);
+        page.setDefaultTimeout(15_000);
 
         const url = `https://wellington.ultimate.org.nz/e/${hyphenateForURL(event)}/standings`;
 
@@ -256,6 +256,7 @@ ultiCollection.commands.unshift(new Command(
             pointDiff: string,
         }
 
+        // noinspection CommaExpressionJS
         const teams: Team[] = (await last(await page.$$(".striped-blocks")).evaluate(node => {
             return Array.from(node.getElementsByClassName("striped-block")).map(node => ({
                 name: node.querySelector(".plain-link").innerHTML,
@@ -271,7 +272,7 @@ ultiCollection.commands.unshift(new Command(
         )?.rank;
 
         if (!ourRank) {
-            chat.sendMessage(`*[bot]* Sorry, I couldn't find "${team}" in the standings for ${event}.`);
+            await chat.sendMessage(`*[bot]* Sorry, I couldn't find "${team}" in the standings for ${event}.`);
             return;
         }
 
@@ -323,9 +324,8 @@ ultiCollection.commands.unshift(new Command(
 
         rankingMessage += "```\nYou can see the full standings at " + url.slice(8);
 
-        chat.sendMessage(rankingMessage);
-
-        browser.close();
+        await chat.sendMessage(rankingMessage);
+        await browser.close();
     }
 ));
 
@@ -340,19 +340,16 @@ ultiCollection.commands.unshift(new Command(
         if (teamName) {
             const url = `https://ultimate.org.nz/t/${hyphenateForURL(teamName)}/schedule/game_type/with_result`;
             const { games, browser } = await getGames(url, chat);
+            const game = games?.[0];
 
-            if (games.length) {
-                const spirit = await games[0].spirit();
+            if (game) {
+                const spirit = await game.spirit();
+                if (spirit) await chat.sendMessage(`*[bot]* Our spirit rating for our last game was ${spirit}.`);
+                else await chat.sendMessage("*[bot]* Our last game hasn't been given a spirit rating :(");
+            } else await chat.sendMessage(`*[bot]* Hmm, I couldn't find any games on ${url}.`);
 
-                chat.sendMessage(`*[bot]* Our spirit rating for our last game was ${spirit}.`);
-            } else {
-                chat.sendMessage(`*[bot]* Sorry, I couldn't find any games on ${url}.`);
-            }
-
-            browser.close();
-        } else {
-            pleaseSetTeam(chat);
-        }
+            await browser.close();
+        } else await pleaseSetTeam(chat);
     }
 ));
 
@@ -384,19 +381,17 @@ ultiCollection.commands.unshift(new Command(
             );
 
             if (gamesWithTimestamps.length === 0) {
-                chat.sendMessage(`*[bot]* No upcoming games on ${url}.`);
+                await chat.sendMessage(`*[bot]* No upcoming games on ${url}.`);
             } else {
                 const nextGame = gamesWithTimestamps
                     .filter(({ timestamp }) => timestamp > currentTimestamp)
                     .reduce((acc, cur) => cur.timestamp > acc.timestamp ? acc : cur).game;
 
-                chat.sendMessage(`*[bot]* Our next game is at ${await nextGame.time()} against ${await nextGame.opponent()} at ${await nextGame.location()} (${await nextGame.day()}).`);
+                await chat.sendMessage(`*[bot]* Our next game is at ${await nextGame.time()} against ${await nextGame.opponent()} at ${await nextGame.location()} (${await nextGame.day()}).`);
             }
 
-            browser.close();
-        } else {
-            pleaseSetTeam(chat);
-        }
+            await browser.close();
+        } else await pleaseSetTeam(chat);
     }
 ));
 
@@ -417,11 +412,11 @@ ultiCollection.commands.unshift(new Command(
 
                 if (ourScore && theirScore) {
                     if (ourScore > theirScore) {
-                        chat.sendMessage(`*[bot]* We won ${ourScore} - ${theirScore}!`);
+                        await chat.sendMessage(`*[bot]* We won ${ourScore} - ${theirScore}!`);
                     } else if (ourScore < theirScore) {
-                        chat.sendMessage(`*[bot]* We lost ${theirScore} - ${ourScore}.`);
+                        await chat.sendMessage(`*[bot]* We lost ${theirScore} - ${ourScore}.`);
                     } else {
-                        chat.sendMessage(`*[bot]* We tied ${ourScore} all.`);
+                        await chat.sendMessage(`*[bot]* We tied ${ourScore} all.`);
                     }
                 } else {
                     // if we got down here something went very wrong
@@ -431,13 +426,11 @@ ultiCollection.commands.unshift(new Command(
                     /* eslint-enable */
                 }
             } else {
-                chat.sendMessage(`*[bot]* Sorry, I couldn't find any games on ${url}.`);
+                await chat.sendMessage(`*[bot]* Sorry, I couldn't find any games on ${url}.`);
             }
 
-            browser.close();
-        } else {
-            pleaseSetTeam(chat);
-        }
+            await browser.close();
+        } else await pleaseSetTeam(chat);
     }
 ));
 

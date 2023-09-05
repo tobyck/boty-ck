@@ -1,6 +1,6 @@
 # Boty Copper-Kettle
 
-This is my WhatsApp bot built with [whatsapp-web.js](https://github.com/pedroslopez/whatsapp-web.js). Status responses are mostly just some from [VyxalBot](https://github.com/Vyxal/VyxalBot2).
+This is my WhatsApp bot built with [whatsapp-web.js](https://github.com/pedroslopez/whatsapp-web.js). Status responses are mostly taken from [VyxalBot](https://github.com/Vyxal/VyxalBot2).
 
 ## Setup
 

@@ -46,10 +46,10 @@ export class Collection {
                     const chat = await message.getChat();
 
                     if (!prop) { // if no property is specified
-                        chat.sendMessage("*[bot]* Please specify a property to set.");
+                        await chat.sendMessage("*[bot]* Please specify a property to set.");
                         return;
                     } else if (!value) { // if no value is specified
-                        chat.sendMessage("*[bot]* Please specify a value to set the property to.");
+                        await chat.sendMessage("*[bot]* Please specify a value to set the property to.");
                         return;
                     }
 
@@ -57,7 +57,7 @@ export class Collection {
                     this.props(session, chat).set(prop, value);
 
                     // notify the user that the property has been set
-                    chat.sendMessage(`*[bot]* Property "${prop}" set to "${value}".`);
+                    await chat.sendMessage(`*[bot]* Property "${prop}" set to "${value}".`);
                 }
             ));
 
@@ -70,12 +70,12 @@ export class Collection {
                     if (arg) { // if a property is specified
                         if (this.props(session, chat).has(arg)) { // if the property exists
                             this.props(session, chat).delete(arg!); // delete it
-                            chat.sendMessage(`*[bot]* Property "${arg}" removed.`);
+                            await chat.sendMessage(`*[bot]* Property "${arg}" removed.`);
                         } else {
-                            chat.sendMessage(`*[bot]* Property "${arg}" not found.`);
+                            await chat.sendMessage(`*[bot]* Property "${arg}" not found.`);
                         }
                     } else {
-                        chat.sendMessage("*[bot]* Please specify a property to remove.");
+                        await chat.sendMessage("*[bot]* Please specify a property to remove.");
                     }
                 }
             ));
@@ -87,11 +87,11 @@ export class Collection {
                     const chat = await message.getChat();
 
                     if (!arg) {
-                        chat.sendMessage("*[bot]* Please specify a property to get.");
+                        await chat.sendMessage("*[bot]* Please specify a property to get.");
                     } else if (this.props(session, chat).get(arg)) {
-                        chat.sendMessage(`*[bot]* ${this.props(session, chat).get(arg)}`);
+                        await chat.sendMessage(`*[bot]* ${this.props(session, chat).get(arg)}`);
                     } else {
-                        chat.sendMessage(`*[bot]* Property "${arg}" not found.`);
+                        await chat.sendMessage(`*[bot]* Property "${arg}" not found.`);
                     }
                 }
             ));
@@ -133,7 +133,7 @@ export class Collection {
                 }
 
                 const chat = await message.getChat();
-                chat.sendMessage(helpMessage);
+                await chat.sendMessage(helpMessage);
             }
         ));
     }

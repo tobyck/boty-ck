@@ -24,11 +24,11 @@ export const pluralS = (n: number) => n === 1 ? "" : "s";
 export const padTwo0s = (num: number) => num.toString().padStart(2, "0");
 
 export const parseArgs = (str: string): string[] => {
-    // this is can probably be done with a regex but too bad
+    // this can probably be done with a regex but too bad
 
     const args: string[] = [];
-    let state: "string" | "other" | null = null;
-    let startedWith: "'" | "\""; // what the string started with
+    let state: "string" | "other" = null;
+    let startedWith: "'" | "\"" = null; // what the string started with
 
     for (const char of str) {
         if (state === null && char !== " ") {
