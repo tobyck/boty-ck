@@ -1,20 +1,10 @@
 const fs = require("fs");
 
-let [collection, name, description, args] = process.argv.slice(2);
+let [collection, name, argSyntax] = process.argv.slice(2);
 
-args &&= JSON.stringify(args.split(","), null, 1)
-    .replace(/\n\s?/g, " ")
-    .replace(/\[\s/, "[")
-    .replace(/\s]/, "]");
-    
-args ??= "[]";
-
-description = JSON.stringify(description);
-
-const template = `${collection}Collection.commands.unshift(new Command(
-    "${name}", ${args},
-    ${description},
-    async message => {
+const template = `${collection}Collection.commands.unshift(new Command<${argSyntax ? "VariadicCommand" : "NiladicCommand"}>(
+    "${name}", ${argSyntax ? '"' + argSyntax + '"' : "null"},
+    async ${argSyntax ? "(chat, args)" : "chat"} => {
         
     }
 ));`;

@@ -1,4 +1,4 @@
-import type { Chat, Message } from "whatsapp-web.js";
+import type { Chat, Message, MessageSendOptions } from "whatsapp-web.js";
 import { readFileSync } from "fs";
 
 export const randomChoice = <T>(arr: T[]): T => {
@@ -21,6 +21,7 @@ export const last = <T extends { length: number }>(
 ): T extends (infer ElType)[] ? ElType : string => iterable[iterable.length - 1];
 
 export const pluralS = (n: number) => n === 1 ? "" : "s";
+
 export const padTwo0s = (num: number) => num.toString().padStart(2, "0");
 
 export const parseArgs = (str: string): string[] => {
@@ -57,12 +58,22 @@ export const parseArgs = (str: string): string[] => {
     return args;
 };
 
-export const pleaseSetTeam = (chat: Chat) => chat.sendMessage(
-    "*[bot]* Please specify a team using *!ulti/set team <your team name>*. Note: if you still don't see what you expect, there may be multiple teams with your name. If this is case, find your team on ultimate.org.nz and set your team using what appears in the URL (you should see something like ultimate.org.nz/t/epic-team-name-3)."
+export const pleaseSetTeam = (chat: Chat) => sendMessage(
+    chat, "Please specify a team using *!ulti/set team to <your team name>*. Note: if you still don't see what you expect, there may be multiple teams with your name. If this is case, find your team on ultimate.org.nz and set your team using what appears in the URL (you should see something like ultimate.org.nz/t/epic-team-name-3)."
 );
 
 export const fromAdmin = async (message: Message): Promise<boolean> => {
     const permissions = JSON.parse(readFileSync("permissions.json", "utf8"));
     const sender = await message.getContact();
     return message.fromMe || permissions.otherAdmins.includes(sender.id.user);
+};
+
+export const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+
+export const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export const sendMessage = async (chat: Chat, message: string, replyTo?: Message, options: MessageSendOptions = {}) => {
+    const prefixedMessage = "*[bot]* " + message;
+    if (replyTo) return await replyTo.reply(prefixedMessage, chat.id._serialized, options);
+    else return await chat.sendMessage(prefixedMessage, options);
 };

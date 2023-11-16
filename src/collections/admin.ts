@@ -3,8 +3,8 @@ import { readFile } from "fs/promises";
 import process from "node:process";
 import { spawn } from "child_process";
 
-import { Collection, Command } from "../core";
-import { fromAdmin, randomChoice } from "../helpers";
+import { Collection, Command, NiladicCommand, VariadicCommand } from "../core";
+import { fromAdmin, randomChoice, sendMessage } from "../helpers";
 import { client, permissions, session } from "../bot";
 import { Session } from "../session";
 
@@ -21,34 +21,9 @@ const adminCollection = new Collection(
     "This collection contains commands which can only be used by the owner of the bot.",
 );
 
-adminCollection.commands.unshift(new Command(
-    "new-session", [],
-    "Clears current session data",
-    async message => {
-        if (!await fromAdmin(message)) return;
-
-        session.data = Session.blankSession();
-
-        const chat = await message.getChat();
-        await chat.sendMessage("*[bot]* Current session data has been cleared.");
-    }
-));
-
-adminCollection.commands.unshift(new Command(
-    "force-save", [],
-    "Forces the bot to save session data and permissions",
-    async message => {
-        if (!await fromAdmin(message)) return;
-
-        session.save();
-        permissions.save();
-    }
-));
-
-adminCollection.commands.unshift(new Command(
-    "update", [],
-    "Pulls the latest changes from GitHub",
-    async message => {
+adminCollection.commands.unshift(new Command<NiladicCommand>(
+    "update", null,
+    async (chat, message) => {
         if (!await fromAdmin(message)) return;
 
         const childProc = spawn("git", "pull origin master".split(" "), {
@@ -56,26 +31,23 @@ adminCollection.commands.unshift(new Command(
             stdio: [null, "ignore", fs.openSync("./stderr.log", "a")]
         });
 
-        childProc.on("exit", exitCode => {
+        childProc.on("exit", async exitCode => {
             if (exitCode === 0) {
-                message.reply("*[bot]* Latest changes have been pulled from GitHub and merged successfully. Use *!admin/restart* to put these changes into effect.");
+                await sendMessage(chat, "Latest changes have been pulled from GitHub and merged successfully. Use *!admin/restart* to put these changes into effect.", message);
             } else {
-                message.reply("*[bot]* Something went wrong while trying to update. My owner can check the server for more details.");
+                await sendMessage(chat, "Something went wrong while trying to update. My owner can check the server for more details.", message);
             }
         });
     }
 ));
 
-adminCollection.commands.unshift(new Command(
-    "restart", [],
-    "Restarts the bot",
-    async message => {
+adminCollection.commands.unshift(new Command<NiladicCommand>(
+    "restart", null,
+    async (chat, message) => {
         // only allow the owner to restart the bot
         if (!message.fromMe) return;
 
-        const chat = await message.getChat();
-
-        await chat.sendMessage("*[bot]* I'm currently being restarted. My owner will be sent a QR code to bring me back online and will have 1 minute to scan it on web.whatsapp.com.");
+        await sendMessage(chat, "I'm currently being restarted. My owner will be sent a QR code to bring me back online and will have 1 minute to scan it on web.whatsapp.com.");
 
         const stdout = fs.openSync("./stdout.log", "a");
         const stderr = fs.openSync("./stderr.log", "a");
@@ -93,127 +65,145 @@ adminCollection.commands.unshift(new Command(
         const QR_CODE_HEIGHT = 29;
 
         const interval = setInterval(() => {
-            readFile("./stdout.log", "utf8").then(data => {
+            readFile("./stdout.log", "utf8").then(async data => {
                 const stdoutLines = data.split("\n");
 
                 if (stdoutLines.length >= QR_CODE_HEIGHT && !gotQrCode) {
                     // send the qr code to the bot owner
-                    client.sendMessage(message.from, `*[bot]* Scan this to restart the bot:\n\`\`\`${stdoutLines.slice(-QR_CODE_HEIGHT - 1, -1).join("\n")}\`\`\``);
+                    await sendMessage(await client.getChatById(message.from), `Scan this to restart the bot:\n\`\`\`${stdoutLines.slice(-QR_CODE_HEIGHT - 1, -1).join("\n")}\`\`\``);
 
                     gotQrCode = true;
                 }
 
                 // if a second qr code is found, timeout
                 if (stdoutLines.length >= QR_CODE_HEIGHT * 2) {
-                    chat.sendMessage("*[bot]* QR code has expired. Please try again.");
+                    await sendMessage(chat, "QR code has expired. Please try again.");
                     childProc.kill();
                     clearInterval(interval);
                 }
 
                 // once the new bot is ready we can kill the old one
                 if (stdoutLines.some(line => line.includes("Client is ready"))) {
-                    client.destroy();
+                    await client.destroy();
                     clearInterval(interval);
                     process.exit(0);
                 }
             });
         }, 4000);
 
-        childProc.on("error", err => {
-            chat.sendMessage("*[bot]* Something went wrong while trying to restart. My owner can check the server for more details.");
+        childProc.on("error", async err => {
+            await sendMessage(chat, "Something went wrong while trying to restart. My owner can check the server for more details.");
             throw err;
         });
     }
 ));
 
-adminCollection.commands.unshift(new Command(
-    "wake", [],
-    "Awakes the bot",
-    async message => {
+adminCollection.commands.unshift(new Command<NiladicCommand>(
+    "wake", null,
+    async (chat, message) => {
         if (!await fromAdmin(message)) return;
 
-        const chat = await message.getChat();
-        await chat.sendMessage(`*[bot]* ${randomChoice(responses.awake)}`);
+        await sendMessage(chat, `${randomChoice(responses.awake)}`);
 
         globalThis.awake = true;
     }
 ));
 
-adminCollection.commands.unshift(new Command(
-    "sleep", [],
-    "Puts the bot to sleep",
-    async message => {
+adminCollection.commands.unshift(new Command<NiladicCommand>(
+    "sleep", null,
+    async (chat, message) => {
         if (!await fromAdmin(message)) return;
 
-        const chat = await message.getChat();
-        await chat.sendMessage(`*[bot]* ${randomChoice(responses.sleep)}`);
+        await sendMessage(chat, `${randomChoice(responses.sleep)}`);
 
         globalThis.awake = false;
     }
 ));
 
-adminCollection.commands.unshift(new Command(
-    "die", [],
-    "Kills the bot",
-    async message => {
+adminCollection.commands.unshift(new Command<NiladicCommand>(
+    "die", null,
+    async (chat, message) => {
         if (!await fromAdmin(message)) return;
 
-        const chat = await message.getChat();
-
-        await chat.sendMessage(`*[bot]* ${randomChoice(responses.death)}`);
-        // wait a second before disconnecting because the promise
-        // returned by chat.sendMessage seems to not work
+        await sendMessage(chat, `${randomChoice(responses.death)}`);
+        // wait a second before disconnecting because chat.sendMessage is weird
         setTimeout(client.destroy.bind(client), 1000);
     }
 ));
 
-adminCollection.commands.unshift(new Command(
-    "disallow/admin", ["phone number"],
-    "Removes a user's admin privileges",
-    async (message, phoneNumber) => {
+adminCollection.commands.unshift(new Command<NiladicCommand>(
+    "session/load", null,
+    async (_, message) => {
+        if (!await fromAdmin(message)) return;
+
+        session.load();
+        permissions.load();
+    }
+));
+
+adminCollection.commands.unshift(new Command<NiladicCommand>(
+    "session/save", null,
+    async (_, message) => {
+        if (!await fromAdmin(message)) return;
+
+        session.save();
+        permissions.save();
+    }
+));
+
+adminCollection.commands.unshift(new Command<NiladicCommand>(
+    "session/new", null,
+    async (chat, message) => {
+        if (!await fromAdmin(message)) return;
+
+        session.data = Session.blankSession();
+
+        await sendMessage(chat, "Current session data has been cleared.");
+    }
+));
+
+adminCollection.commands.unshift(new Command<VariadicCommand>(
+    "disallow/admin", "<phone number>",
+    async (chat, phoneNumber, message) => {
         if (!await fromAdmin(message)) return;
         phoneNumber = phoneNumber.replace(/\s\+/g, "");
 
         if (phoneNumber.match(/\D/)) {
-            await message.reply("*[bot]* Please enter a valid phone number.");
+            await sendMessage(chat, "Please enter a valid phone number.", message);
             return;
         }
 
         permissions.otherAdmins.delete(phoneNumber);
 
-        const chat = await message.getChat();
-        await chat.sendMessage(`*[bot]* ${phoneNumber} has had their admin privileges revoked.`);
+        await sendMessage(chat, `${phoneNumber} has had their admin privileges revoked.`);
     }
 ));
 
-adminCollection.commands.unshift(new Command(
-    "allow/admin", ["phone number"],
-    "Gives a user admin privileges",
-    async (message, phoneNumber) => {
+adminCollection.commands.unshift(new Command<VariadicCommand>(
+    "allow/admin", "<phone number>",
+    async (chat, phoneNumber, message) => {
         if (!await fromAdmin(message)) return;
         phoneNumber = phoneNumber.replace(/\s\+/g, "");
 
         if (phoneNumber.match(/\D/)) {
-            await message.reply("*[bot]* Please enter a valid phone number.");
+            await sendMessage(chat, "Please enter a valid phone number.", message);
             return;
         }
 
         permissions.otherAdmins.add(phoneNumber);
 
-        const chat = await message.getChat();
-        await chat.sendMessage(`*[bot]* ${phoneNumber} has been given admin privileges.`);
+        await sendMessage(chat, `${phoneNumber} has been given admin privileges.`);
     }
 ));
 
-adminCollection.commands.unshift(new Command(
-    "disallow/user", ["phone number"],
-    "Bans a user from using the bot",
-    async (message, phoneNumber) => {
+adminCollection.commands.unshift(new Command<VariadicCommand>(
+    "disallow/user", "<phone number>",
+    async (chat, phoneNumber, message) => {
         if (!await fromAdmin(message)) return;
         phoneNumber = phoneNumber.replace(/\s\+/g, "");
 
         if (phoneNumber.match(/\D/)) {
-            await message.reply("*[bot]* Please enter a valid phone number.");
+            await sendMessage(chat, "Please enter a valid phone number.", message);
             return;
         }
 
@@ -223,27 +213,24 @@ adminCollection.commands.unshift(new Command(
 
         permissions.banned.add(phoneNumber);
 
-        const chat = await message.getChat();
-        await chat.sendMessage(`*[bot]* ${phoneNumber} has been banned.`);
+        await sendMessage(chat, `${phoneNumber} has been banned.`);
     }
 ));
 
-adminCollection.commands.unshift(new Command(
-    "allow/user", ["phone number"],
-    "Removes a user's ban from using the bot",
-    async (message, phoneNumber) => {
+adminCollection.commands.unshift(new Command<VariadicCommand>(
+    "allow/user", "<phone number>",
+    async (chat, phoneNumber, message) => {
         if (!await fromAdmin(message)) return;
         phoneNumber = phoneNumber.replace(/\s\+/g, "");
 
         if (phoneNumber.match(/\D/)) {
-            await message.reply("*[bot]* Please enter a valid phone number.");
+            await sendMessage(chat, "Please enter a valid phone number.", message);
             return;
         }
 
         permissions.banned.delete(phoneNumber);
 
-        const chat = await message.getChat();
-        await chat.sendMessage(`*[bot]* ${phoneNumber} has been unbanned.`);
+        await sendMessage(chat, `${phoneNumber} has been unbanned.`);
     }
 ));
 

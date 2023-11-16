@@ -19,9 +19,15 @@ type Props<T extends boolean> = Record<
 
 // stores session data for a chat (T is the generic for Props<T>)
 interface ChatData<T extends boolean> {
-    props: Props<T>;
-    // id of the message containing who's playing in the next game
-    whosPlayingMsgId: string;
+    props: Props<T>; // properties for each collection
+    automations: {
+        command: string,
+        times: {
+            day: number,
+            time: number
+        }[];
+    }[]; // maps commands to list of days/times to run them
+    whosPlayingMsgId: string; // id of the message containing who's playing in the next game
 }
 
 // stores all session data (T is whether the data is serializable or not)
@@ -41,9 +47,10 @@ export class Session {
     }
 
     // if the session data doesn't have an object for a chat, create one
-    tryInitChatData(chatName: string): void {
-        this.data.chats[chatName] ??= {
+    tryInitChatData(chatId: string): void {
+        this.data.chats[chatId] ??= {
             props: {},
+            automations: [],
             whosPlayingMsgId: ""
         };
     }
@@ -58,14 +65,15 @@ export class Session {
             this.data = Session.blankSession<NonSerializable>();
 
             // for each chat
-            for (const [chatName, chatData] of Object.entries(loadedJSON.chats)) {
-                this.tryInitChatData(chatName);
+            for (const [chatId, chatData] of Object.entries(loadedJSON.chats)) {
+                this.tryInitChatData(chatId);
 
-                this.data.chats[chatName].whosPlayingMsgId = chatData.whosPlayingMsgId;
+                this.data.chats[chatId].whosPlayingMsgId = chatData.whosPlayingMsgId;
+                this.data.chats[chatId].automations = chatData.automations;
 
                 // add a map object of props for each collection which has any
                 for (const [collection, props] of Object.entries(chatData.props)) {
-                    this.data.chats[chatName].props[collection] = new Map(Object.entries(props));
+                    this.data.chats[chatId].props[collection] = new Map(Object.entries(props));
                 }
             }
         }
@@ -76,14 +84,15 @@ export class Session {
         const serializable = Session.blankSession<Serializable>();
 
         // fill in the session data in a similar way to how it was loaded
-        for (const [chatName, chatData] of Object.entries(this.data.chats)) {
-            serializable.chats[chatName] = {
+        for (const [chatId, chatData] of Object.entries(this.data.chats)) {
+            serializable.chats[chatId] = {
                 props: {},
+                automations: chatData.automations,
                 whosPlayingMsgId: chatData.whosPlayingMsgId
             };
 
             for (const [collection, props] of Object.entries(chatData.props)) {
-                serializable.chats[chatName].props[collection] = Object.fromEntries(props);
+                serializable.chats[chatId].props[collection] = Object.fromEntries(props);
             }
         }
 

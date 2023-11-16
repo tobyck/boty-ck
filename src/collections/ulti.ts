@@ -3,8 +3,8 @@ import type { Chat, GroupChat } from "whatsapp-web.js";
 import * as puppeteer from "puppeteer";
 import { ElementHandle } from "puppeteer";
 
-import { Collection, Command } from "../core";
-import { hyphenateForURL, last, padTwo0s, pleaseSetTeam, pluralS } from "../helpers";
+import { Collection, Command, NiladicCommand } from "../core";
+import { hyphenateForURL, last, padTwo0s, pleaseSetTeam, pluralS, sendMessage } from "../helpers";
 import { session } from "../bot";
 
 const ultiCollection = new Collection(
@@ -13,15 +13,12 @@ const ultiCollection = new Collection(
     true // give the collection the set, unset, and get commands
 );
 
-ultiCollection.commands.unshift(new Command(
-    "numbers", [],
-    "See how many people are playing",
-    async message => {
-        const chat = await message.getChat() as GroupChat;
-
+ultiCollection.commands.unshift(new Command<NiladicCommand>(
+    "numbers", null,
+    async (chat: GroupChat, message) => {
         if (chat.isGroup) { // only allow command in group chats
             // get the message id of the whosPlaying message
-            const whosPlayingMsgId = session.data.chats[chat.name].whosPlayingMsgId;
+            const whosPlayingMsgId = session.data.chats[chat.id._serialized].whosPlayingMsgId;
 
             if (whosPlayingMsgId) { // if that id exists
                 // get the last 100 of my messages in the chat
@@ -52,13 +49,13 @@ ultiCollection.commands.unshift(new Command(
 
                         // if the teamsize property doesn't exist, set it to 4 (for indoors)
                         if (!props.has("teamsize")) {
-                            props.set("teamsize", "4");
+                            props.set("teamsize", "7");
                         }
 
                         const teamSize = parseInt(props.get("teamsize")!);
 
                         if (teamSize < 1) {
-                            await message.reply(`*[bot]* Team size is set to ${teamSize} but must be more than zero.`);
+                            await sendMessage(chat, `Team size is set to ${teamSize} but must be more than zero.`, message);
                             return;
                         }
 
@@ -66,44 +63,33 @@ ultiCollection.commands.unshift(new Command(
                         const numOfParticipants = chat.participants.length;
 
                         if (numOfParticipants < teamSize) {
-                            await message.reply(`*[bot]* Your minimum team size is set to ${teamSize} but you have only ${numOfParticipants} ${numOfParticipants === 1 ? "person" : "people"} in this chat.`);
+                            await sendMessage(chat, `Your minimum team size is set to ${teamSize} but you have only ${numOfParticipants} ${numOfParticipants === 1 ? "person" : "people"} in this chat.`, message);
                             return;
                         }
 
                         if (numOfPlayers < teamSize) {
-                            await message.reply(`*[bot]* So far we've got ${numOfPlayers || "no"} player${pluralS(numOfPlayers)}, so we need at least ${teamSize - numOfPlayers} more. ${numOfParticipants - numOfPlayers - notPlaying} people still to respond.`);
+                            await sendMessage(chat, `So far we've got ${numOfPlayers || "no"} player${pluralS(numOfPlayers)}, so we need at least ${teamSize - numOfPlayers} more. ${numOfParticipants - numOfPlayers - notPlaying} people still to respond.`, message);
                         } else {
                             const subs = numOfPlayers - teamSize;
-                            await message.reply(`*[bot]* We've got ${numOfPlayers} player${pluralS(numOfPlayers)} (${subs || "no"} sub${pluralS(subs)}).`);
+                            await sendMessage(chat, `We've got ${numOfPlayers} player${pluralS(numOfPlayers)} (${subs || "no"} sub${pluralS(subs)}).`, message);
                         }
-                    } else {
-                        await message.reply("*[bot]* No one has reacted to the message with who's playing yet.");
-                    }
-                } else {
-                    await message.reply("*[bot]* Sorry, the message with who's playing is too far back.");
-                }
-            } else {
-                await message.reply("*[bot]* Use *!ulti/who* to ask who's playing and try again later.");
-            }
-        } else {
-            await message.reply("*[bot]* This command can only be used in a group chat.");
-        }
+                    } else await sendMessage(chat, "No one has reacted to the message with who's playing yet.", message);
+                } else await sendMessage(chat, "Sorry, the message with who's playing is too far back.", message);
+            } else await sendMessage(chat, "Use *!ulti/who* to ask who's playing and try again later.", message);
+        } else await sendMessage(chat, "This command can only be used in a group chat.", message);
     }
 ));
 
-ultiCollection.commands.unshift(new Command(
-    "who", [],
-    "Asks who's playing",
-    async message => {
-        const chat = await message.getChat();
-
+ultiCollection.commands.unshift(new Command<NiladicCommand>(
+    "who", null,
+    async (chat) => {
         if (chat.isGroup) { // only allow command in group chats
             // ask who's playing and store the id of that message in the session data
-            session.tryInitChatData(chat.name);
-            session.data.chats[chat.name].whosPlayingMsgId = (await chat.sendMessage("*[bot]* Who's playing? React to with this message with 👍 or 👎.")).id.id;
+            session.tryInitChatData(chat.id._serialized);
+            session.data.chats[chat.name].whosPlayingMsgId = (await sendMessage(chat, "Who's playing? React to with this message with 👍 or 👎.")).id.id;
             session.save(); // update the session data file
         } else {
-            await message.reply("*[bot]* This command can only be used in a group chat.");
+            await sendMessage(chat, "This command can only be used in a group chat.");
         }
     }
 ));
@@ -115,9 +101,12 @@ class Game {
         this.node = node;
     }
 
-    async result(): Promise<[number, number]> {
+    async result(): Promise<[number, number] | string> {
         return (await this.node.$$eval(".score", scoreEl => {
-            return scoreEl.map(el => parseInt(el.innerHTML));
+            return scoreEl.map(el => {
+                const int = parseInt(el.innerHTML);
+                return isNaN(int) ? el.innerHTML.trim() : int;
+            });
         })) as [number, number];
     }
 
@@ -195,7 +184,7 @@ const getGames = async (url: string, chat: Chat): Promise<{
     try {
         await page.goto(url);
     } catch (_) {
-        await chat.sendMessage(`*[bot]* Sorry, I couldn't find any games on ${url}`);
+        await sendMessage(chat, `Sorry, I couldn't find any games on ${url}`);
     }
 
     // set screen size to 1080p
@@ -219,23 +208,20 @@ const getGames = async (url: string, chat: Chat): Promise<{
     }
 };
 
-ultiCollection.commands.unshift(new Command(
-    "ranking", [],
-    "Shows the standings in the event specified in the \"event\" property",
-    async message => {
-        const chat = await message.getChat();
-
+ultiCollection.commands.unshift(new Command<NiladicCommand>(
+    "ranking", null,
+    async (chat, message) => {
         const team = ultiCollection.props(session, chat).get("team");
         const event = ultiCollection.props(session, chat).get("event");
 
         if (!team || !event) {
             if (!team && !event) {
-                await message.reply("*[bot]* Please specify a team and event using *!ulti/set team <team name>* and *!ulti/set event <event name>*");
+                await sendMessage(chat, "Please specify a team and event using *!ulti/set team to <team name>* and *!ulti/set event <event name>*", message);
                 return;
             }
 
-            if (!team) await message.reply("*[bot]* Please specify a team using *!ulti/set team <team name>*");
-            if (!event) await message.reply("*[bot]* Please specify an event using *!ulti/set event <event name>* (just copy/paste from the website).");
+            if (!team) await sendMessage(chat, "Please specify a team using *!ulti/set team to <team name>*", message);
+            if (!event) await sendMessage(chat, "Please specify an event using *!ulti/set event to <event name>* (just copy/paste from the website).", message);
 
             return;
         }
@@ -265,14 +251,14 @@ ultiCollection.commands.unshift(new Command(
             }));
         })).map((team, index) => (team.rank = index + 1, team));
 
-        let rankingMessage = `*[bot]* Here are the standings for ${event} (there are ${teams.length} in total):\n\n\`\`\``;
+        let rankingMessage = `Here are the standings for ${event} (there are ${teams.length} in total):\n\n\`\`\``;
 
         const ourRank = teams.find(
             team => team.name.toLowerCase() === ultiCollection.props(session, chat).get("team").toLowerCase()
         )?.rank;
 
         if (!ourRank) {
-            await chat.sendMessage(`*[bot]* Sorry, I couldn't find "${team}" in the standings for ${event}.`);
+            await sendMessage(chat, `Sorry, I couldn't find "${team}" in the standings for ${event}.`);
             return;
         }
 
@@ -324,17 +310,14 @@ ultiCollection.commands.unshift(new Command(
 
         rankingMessage += "```\nYou can see the full standings at " + url.slice(8);
 
-        await chat.sendMessage(rankingMessage);
+        await sendMessage(chat, rankingMessage);
         await browser.close();
     }
 ));
 
-ultiCollection.commands.unshift(new Command(
-    "spirit", [],
-    "Shows our spirit rating of our last game",
-    async message => {
-        const chat = await message.getChat();
-
+ultiCollection.commands.unshift(new Command<NiladicCommand>(
+    "spirit", null,
+    async chat => {
         const teamName = ultiCollection.props(session, chat).get("team");
 
         if (teamName) {
@@ -344,21 +327,18 @@ ultiCollection.commands.unshift(new Command(
 
             if (game) {
                 const spirit = await game.spirit();
-                if (spirit) await chat.sendMessage(`*[bot]* Our spirit rating for our last game was ${spirit}.`);
-                else await chat.sendMessage("*[bot]* Our last game hasn't been given a spirit rating :(");
-            } else await chat.sendMessage(`*[bot]* Hmm, I couldn't find any games on ${url}.`);
+                if (spirit) await sendMessage(chat, `Our spirit rating for our last game was ${spirit}.`);
+                else await sendMessage(chat, "Our last game hasn't been given a spirit rating :(");
+            } else await sendMessage(chat, `Hmm, I couldn't find any games on ${url}.`);
 
             await browser.close();
         } else await pleaseSetTeam(chat);
     }
 ));
 
-ultiCollection.commands.unshift(new Command(
-    "next", [],
-    "Gets details about our next game",
-    async message => {
-        const chat = await message.getChat();
-
+ultiCollection.commands.unshift(new Command<NiladicCommand>(
+    "next", null,
+    async chat => {
         const teamName = ultiCollection.props(session, chat).get("team");
 
         if (teamName) { // if a team is set
@@ -381,13 +361,13 @@ ultiCollection.commands.unshift(new Command(
             );
 
             if (gamesWithTimestamps.length === 0) {
-                await chat.sendMessage(`*[bot]* No upcoming games on ${url}.`);
+                await sendMessage(chat, `No upcoming games on ${url}.`);
             } else {
                 const nextGame = gamesWithTimestamps
                     .filter(({ timestamp }) => timestamp > currentTimestamp)
                     .reduce((acc, cur) => cur.timestamp > acc.timestamp ? acc : cur).game;
 
-                await chat.sendMessage(`*[bot]* Our next game is at ${await nextGame.time()} against ${await nextGame.opponent()} at ${await nextGame.location()} (${await nextGame.day()}).`);
+                await sendMessage(chat, `Our next game is at ${await nextGame.time()} against ${await nextGame.opponent()} at ${await nextGame.location()} (${await nextGame.day()}).`);
             }
 
             await browser.close();
@@ -395,12 +375,9 @@ ultiCollection.commands.unshift(new Command(
     }
 ));
 
-ultiCollection.commands.unshift(new Command(
-    "score", [],
-    "Gets the score of the last game",
-    async message => {
-        const chat = await message.getChat();
-
+ultiCollection.commands.unshift(new Command<NiladicCommand>(
+    "score", null,
+    async chat => {
         const teamName = ultiCollection.props(session, chat).get("team");
 
         if (teamName) {
@@ -411,13 +388,11 @@ ultiCollection.commands.unshift(new Command(
                 const [ourScore, theirScore] = await games[0].result();
 
                 if (ourScore && theirScore) {
-                    if (ourScore > theirScore) {
-                        await chat.sendMessage(`*[bot]* We won ${ourScore} - ${theirScore}!`);
-                    } else if (ourScore < theirScore) {
-                        await chat.sendMessage(`*[bot]* We lost ${theirScore} - ${ourScore}.`);
-                    } else {
-                        await chat.sendMessage(`*[bot]* We tied ${ourScore} all.`);
-                    }
+                    if (ourScore === "L") await sendMessage(chat, "We defaulted :(");
+                    else if (ourScore === "W") await sendMessage(chat, "They defaulted so we won");
+                    else if (ourScore > theirScore) await sendMessage(chat, `We won ${ourScore} - ${theirScore}!`);
+                    else if (ourScore < theirScore) await sendMessage(chat, `We lost ${theirScore} - ${ourScore}.`);
+                    else if (ourScore === theirScore) await sendMessage(chat, `We tied ${ourScore} all.`);
                 } else {
                     // if we got down here something went very wrong
                     /* eslint-disable */
@@ -426,7 +401,7 @@ ultiCollection.commands.unshift(new Command(
                     /* eslint-enable */
                 }
             } else {
-                await chat.sendMessage(`*[bot]* Sorry, I couldn't find any games on ${url}.`);
+                await sendMessage(chat, `Sorry, I couldn't find any games on ${url}.`);
             }
 
             await browser.close();
