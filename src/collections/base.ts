@@ -19,7 +19,13 @@ baseCollection.commands.unshift(new Command<VariadicCommand>(
         if (!automationIndex) {
             await sendMessage(chat, "Please specify the automation's id to remove it. You can view these with *!automations*.");
         } else {
-            const automations = session.data.chats[chat.id._serialized].automations;
+            const automations = session.data.chats?.[chat.id._serialized]?.automations;
+
+            if (!automations) {
+                await sendMessage(chat, "There are no automations in this chat.");
+                return;
+            }
+
             const index = parseInt(automationIndex) - 1;
 
             if (index < 0 || index >= automations.length) {
@@ -35,7 +41,11 @@ baseCollection.commands.unshift(new Command<VariadicCommand>(
 baseCollection.commands.unshift(new Command<NiladicCommand>(
     "automations", null,
     async chat => {
-        const automations = session.data.chats[chat.id._serialized].automations;
+        const chatId = chat.id._serialized;
+
+        session.tryInitChatData(chatId);
+
+        const automations = session.data.chats[chatId].automations;
 
         if (automations.length === 0) {
             await sendMessage(chat, "There are no automations in this chat.");
