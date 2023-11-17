@@ -59,11 +59,7 @@ const runCommand = async (commandBody: string, chat: Chat, automated: boolean, m
         for (const collection of collections) {
             if (collection.name === collectionName) {
                 for (const command of collection.commands) {
-                    if (
-                        automated ||
-                        (command.name === commandName &&
-                        Date.now() - timeOfLastCommand > COOLDOWN)
-                    ) {
+                    if (command.name === commandName && (automated || Date.now() - timeOfLastCommand > COOLDOWN)) {
                         await chat.sendStateTyping();
 
                         if (command.argSyntax) {
