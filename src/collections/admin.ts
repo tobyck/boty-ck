@@ -49,12 +49,19 @@ adminCollection.commands.unshift(new Command<NiladicCommand>(
 
         await sendMessage(chat, "I'm currently being restarted. My owner will be sent a QR code to bring me back online and will have 1 minute to scan it on web.whatsapp.com.");
 
+        // save current session data to be loaded by the new bot later
+        session.save();
+        permissions.save();
+
+        // open the stdout and stderr logs
         const stdout = fs.openSync("./stdout.log", "a");
         const stderr = fs.openSync("./stderr.log", "a");
 
+        // clear the logs
         fs.writeFileSync("./stdout.log", "");
         fs.writeFileSync("./stderr.log", "");
 
+        // spawn a new child process for the new bot
         const childProc = spawn("nohup", ["yarn", "start", randomChoice(responses.restart)], {
             detached: true,
             stdio: [null, stdout, stderr] // null for stdin as we don't need it
@@ -64,6 +71,7 @@ adminCollection.commands.unshift(new Command<NiladicCommand>(
 
         const QR_CODE_HEIGHT = 29;
 
+        // check for the qr code in the stdout log every 4 seconds
         const interval = setInterval(() => {
             readFile("./stdout.log", "utf8").then(async data => {
                 const stdoutLines = data.split("\n");
