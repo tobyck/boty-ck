@@ -42,7 +42,7 @@ ultiCollection.commands.unshift(new Command<NiladicCommand>(
 
                         // get the number of people who are NOT playing
                         const notPlaying: number = reactions
-                            .find(reaction => reaction.aggregateEmoji === "👎")
+                            .find(reaction => reaction.aggregateEmoji === "😢")
                             ?.senders.length ?? 0;
 
                         const props = ultiCollection!.props(session, chat);
@@ -86,7 +86,7 @@ ultiCollection.commands.unshift(new Command<NiladicCommand>(
         if (chat.isGroup) { // only allow command in group chats
             // ask who's playing and store the id of that message in the session data
             session.tryInitChatData(chat.id._serialized);
-            session.data.chats[chat.name].whosPlayingMsgId = (await sendMessage(chat, "Who's playing? React to with this message with 👍 or 👎.")).id.id;
+            session.data.chats[chat.id._serialized].whosPlayingMsgId = (await sendMessage(chat, "Who's playing? React to with this message with 👍 or 😢.")).id.id;
             session.save(); // update the session data file
         } else {
             await sendMessage(chat, "This command can only be used in a group chat.");

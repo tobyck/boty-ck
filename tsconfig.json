@@ -5,7 +5,11 @@
             "dom",
             "es2017"
         ],
+        "skipLibCheck": true,
         "moduleResolution": "node",
         "allowSyntheticDefaultImports": true
-    }
+    },
+    "include": [
+        "src/**/*"
+    ]
 }

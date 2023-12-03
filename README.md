@@ -129,7 +129,7 @@ If you've found a bug, please raise an issue on GitHub [here](https://github.com
 2. Make sure you have [Node.js](https://nodejs.org/en) and [Yarn](https://yarnpkg.com/) installed
 3. Run `yarn install` to install dependencies
 4. Make and test your changes (you can use `yarn add-cmd <collection> <name> [arg syntax]` to generate the boilerplate for a command in the right file)
-5. Run `yarn lint` to fix any formatting errors, then `yarn build` to generate an optimised bundle with [Parcel](https://parceljs.org) (use `yarn watch` for incremental compilation during development)
+5. Run `yarn lint` to fix any formatting errors, `yarn run check` to check for any type errors that weren't picked up by Parcel's parser, then `yarn build` to generate an optimised bundle with [Parcel](https://parceljs.org) (use `yarn watch` for incremental compilation during development)
 6. Add any necessary documentation
 7. Submit a PR
 

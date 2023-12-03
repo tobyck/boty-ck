@@ -21,8 +21,7 @@
             "the impossible",
             "a layout",
             "the laundry",
-            "a 360 back flip",
-            "undefined",
+            "a 360 backflip",
             "what I was doing last time you asked",
             "nothing but answering your requests"
         ],
@@ -31,7 +30,6 @@
             "cooking dinner",
             "playing frisbee with the other bots",
             "hacking into the mainframe",
-            "[object Object]",
             "getting a PhD in ultimate frisbee",
             "downloading more RAM",
             "parsing HTML with regex",
@@ -57,15 +55,12 @@
         "Farewell, dear friends, we shall meet again...",
         "This won't be the last you see of me...",
         "Well, it was nice knowing you.",
-        "I would've expected for you to never give me up as well :(",
         "This isn't over yet... I'll be back.",
-        "So long and thanks for all the fish.",
+        "So long and thanks for all the fish",
         "💀"
     ],
     "restart": [
         "I'm back!",
-        "I told you I'd be back...",
-        "I said I'd never give you up, so here I am.",
         "So, what did I miss?",
         "H-hello? Where am I?",
         "Ahh, it's good to be back."
