@@ -1,6 +1,7 @@
 # dev stuff
 node_modules
 .parcel-cache
+.idea
 
 # bot data
 session.json

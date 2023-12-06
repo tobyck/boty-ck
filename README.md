@@ -2,11 +2,16 @@
 
 ## Contents
 
-- [Overview](#overview)
-- [Installation](#installation)
-- [Basic Usage](#basic-usage)
-- [Commands](#commands)
-- [Contributing](#contributing)
+- [Boty C-K](#boty-c-k)
+  - [Contents](#contents)
+  - [Overview](#overview)
+  - [Installation](#installation)
+  - [Basic Usage](#basic-usage)
+  - [Commands](#commands)
+    - [Basic](#basic)
+    - [Ultimate Frisbee `!ulti/`](#ultimate-frisbee-ulti)
+    - [Admin `!admin/`](#admin-admin)
+  - [Contributing](#contributing)
 
 ## Overview
 
@@ -75,7 +80,7 @@ One last thing: there's also the base collection. This is used for general comma
 ### Basic
 
 | Command/Syntax                                | Description                                                                                                                        |
-|-----------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------|
+| --------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
 | `!status`                                     | Tells you what the bot is doing right now                                                                                          |
 | `!everyone`                                   | Pings everyone in the group chat                                                                                                   |
 | `!cookie`                                     | Gives you a cookie (with a 10% of being denied)                                                                                    |
@@ -89,12 +94,12 @@ One last thing: there's also the base collection. This is used for general comma
 All game information is retrieved from [Ultimate Central](https://ultimatecentral.com/) or derivatives.
 
 | Command/Syntax                    | Description                                                                                                                                                                                                      |
-|-----------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `!ulti/score`                     | Tells you the score of your last game. Needs the `team` to be set (and so do the next 3 commands)                                                                                                                |
 | `!ulti/next`                      | Gives you details about your next game: time, location, field number, etc                                                                                                                                        |
 | `!ulti/spirit`                    | Tells you your spirit score from your last game                                                                                                                                                                  |
 | `!ulti/ranking`                   | Tells you where you are ranked in relation to others in the event specified in the `event` property                                                                                                              |
-| `!ulti/who`                       | Asks who's playing in the next game. People can react with 👍 or 👎                                                                                                                                              |
+| `!ulti/who`                       | Asks who's playing in the next game. People can react with 👍 or 😥😢                                                                                                                                               |
 | `!ulti/numbers`                   | Uses the last message from `!ulti/who` to tell you how many people are coming, how many subs you'll have, or how many more people you need. Team size defaults to 7 but can changed with the `teamsize` property |
 | `!ulti/set <property> to <value>` | Set property to specified value in this collection only                                                                                                                                                          |
 | `!ulti/get <property>`            | Tells you the value of the property specified                                                                                                                                                                    |
@@ -106,7 +111,7 @@ All game information is retrieved from [Ultimate Central](https://ultimatecentra
 These commands can only be used by the bot owner or other group members who the owner grants admin permissions.
 
 | Command/Syntax                         | Description                                                                                                                                                                                                                                                    |
-|----------------------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `!admin/allow/user <phone number>`     | Allows a user to use the bot (un-ban a user)                                                                                                                                                                                                                   |
 | `!admin/disallow/user <phone number>`  | Bans a user from using the bot (but keeps them in the chat)                                                                                                                                                                                                    |
 | `!admin/allow/admin <phone number>`    | Grant a user admin permissions                                                                                                                                                                                                                                 |
@@ -123,7 +128,7 @@ These commands can only be used by the bot owner or other group members who the 
 
 ## Contributing
 
-If you've found a bug, please raise an issue on GitHub [here](https://github.com/tobyck/boty-ck/issues) and I'll hopefully fix at some point[^1]. If you don't have a GitHub account, or you can't be bothered to click a few buttons and make one, contact me somewhere else. If you have a feature request, do the same thing, and if it sounds good, and you'd like to implement it yourself, do the following:
+If you've found a bug, please raise an issue on GitHub [here](https://github.com/tobyck/boty-ck/issues) and I'll hopefully fix it at some point[^1]. If you don't have a GitHub account, or you can't be bothered to click a few buttons and make one, contact me somewhere else. If you have a feature request, do the same thing, or if you'd like to implement something yourself, do the following:
 
 1. Fork this repository
 2. Make sure you have [Node.js](https://nodejs.org/en) and [Yarn](https://yarnpkg.com/) installed

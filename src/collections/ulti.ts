@@ -232,7 +232,7 @@ ultiCollection.commands.unshift(new Command<NiladicCommand>(
 
         page.setDefaultTimeout(15_000);
 
-        const url = `https://wellington.ultimate.org.nz/e/${hyphenateForURL(event)}/standings`;
+        const url = `https://ultimate.org.nz/e/${hyphenateForURL(event)}/standings`;
 
         await page.goto(url);
 
@@ -381,7 +381,7 @@ ultiCollection.commands.unshift(new Command<NiladicCommand>(
         const teamName = ultiCollection.props(session, chat).get("team");
 
         if (teamName) {
-            const url = `https://ultimate.org.nz/t/${hyphenateForURL(teamName)}/schedule/game_type/with_result`;
+            const url = `https://ultimate.org.nz/t/${hyphenateForURL(teamName)}/schedule/event_id/active_events_only/game_type/played`;
             const { games, browser } = await getGames(url, chat);
 
             if (games.length) {
@@ -389,16 +389,12 @@ ultiCollection.commands.unshift(new Command<NiladicCommand>(
 
                 if (ourScore && theirScore) {
                     if (ourScore === "L") await sendMessage(chat, "We defaulted :(");
-                    else if (ourScore === "W") await sendMessage(chat, "They defaulted so we won");
+                    else if (ourScore === "W") await sendMessage(chat, "The other team defaulted");
                     else if (ourScore > theirScore) await sendMessage(chat, `We won ${ourScore} - ${theirScore}!`);
                     else if (ourScore < theirScore) await sendMessage(chat, `We lost ${theirScore} - ${ourScore}.`);
                     else if (ourScore === theirScore) await sendMessage(chat, `We tied ${ourScore} all.`);
                 } else {
-                    // if we got down here something went very wrong
-                    /* eslint-disable */
-                    console.log("ourScore:", ourScore);
-                    console.log("theirScore:", theirScore);
-                    /* eslint-enable */
+                    await sendMessage(chat, "The score from last game hasn't been entered yet.");
                 }
             } else {
                 await sendMessage(chat, `Sorry, I couldn't find any games on ${url}.`);
