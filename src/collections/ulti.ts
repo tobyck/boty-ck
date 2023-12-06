@@ -385,7 +385,7 @@ ultiCollection.commands.unshift(new Command<NiladicCommand>(
             const { games, browser } = await getGames(url, chat);
 
             if (games.length) {
-                const [ourScore, theirScore] = await games[0].result();
+                const [ourScore, theirScore] = await games.at(-1).result();
 
                 if (ourScore && theirScore) {
                     if (ourScore === "L") await sendMessage(chat, "We defaulted :(");
